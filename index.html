@@ -409,6 +409,20 @@
         .search-results ul li a:hover {
             color: var(--primary-blue);
         }
+
+        /* Style for the "Made With ❤️ Prem" line */
+        .footer-bottom p:last-child {
+            margin-top: 10px; /* Add a little space above this line */
+            font-weight: bold; /* Make it bold */
+            color: var(--light-blue); /* Match a theme color, like light-blue */
+            opacity: 1; /* Ensure full opacity */
+            font-size: 1rem; /* Slightly larger font */
+        }
+
+        .footer-bottom p:last-child .fas.fa-heart {
+            color: #e53e3e; /* Red color for the heart icon */
+            margin: 0 4px; /* Add space around the heart */
+        }
         
         /* Responsive */
         @media (max-width: 992px) {
@@ -1103,6 +1117,7 @@
             
             <div class="footer-bottom">
                 <p>© 2025 Toollaxy. All rights reserved.</p>
+                <p>Made With <i class="fas fa-heart"></i> Prem</p> <!-- Added line with style -->
             </div>
         </div>
     </footer>
@@ -1111,7 +1126,18 @@
         // Mobile menu toggle functionality
         document.querySelector('.mobile-menu-btn').addEventListener('click', function() {
             const nav = document.querySelector('nav');
-            nav.style.display = nav.style.display === 'block' ? 'none' : 'block';
+            // Simple toggle for demonstration, could be improved for accessibility
+            if (nav.style.display === 'block') {
+                nav.style.display = 'none';
+            } else {
+                nav.style.display = 'block';
+            }
+            // Hide when clicking a link (for single-page nav)
+            nav.querySelectorAll('a').forEach(link => {
+                 link.addEventListener('click', () => {
+                      nav.style.display = 'none';
+                 });
+            });
         });
         
         // Search functionality
@@ -1122,6 +1148,7 @@
         // Also search when Enter key is pressed
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent default form submission if it were a form
                 performSearch();
             }
         });
@@ -1151,18 +1178,39 @@
                     foundResults = true;
                     const listItem = document.createElement('li');
                     const link = document.createElement('a');
-                    link.href = '#' + card.closest('.tools-section').id;
+                    // Linking to section ID for smoother scroll on the same page
+                    // If you have individual tool pages, change the href accordingly
+                    const sectionId = card.closest('.tools-section').id;
+                    link.href = `#${sectionId}`; // Link to the section containing the tool
                     link.textContent = toolName;
-                    link.onclick = function() {
-                        // Scroll to the tool section
-                        card.scrollIntoView({ behavior: 'smooth' });
-                        // Highlight the card
-                        card.style.boxShadow = '0 0 0 3px var(--primary-blue)';
-                        setTimeout(() => {
-                            card.style.boxShadow = 'var(--shadow)';
-                        }, 2000);
-                        resultsContainer.style.display = 'none';
+                    
+                    link.onclick = function(event) {
+                        event.preventDefault(); // Prevent default anchor jump
+                        // Scroll to the section
+                        const section = document.getElementById(sectionId);
+                        if (section) {
+                             section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                             // Optional: Highlight the card after scrolling
+                             // Find the exact card element to highlight within the section
+                             const cardsInSection = section.querySelectorAll('.tool-card');
+                             cardsInSection.forEach(secCard => {
+                                 if (secCard.querySelector('h3').textContent.toLowerCase() === toolName) {
+                                     secCard.style.boxShadow = '0 0 0 3px var(--primary-blue)';
+                                     secCard.style.borderColor = 'var(--primary-blue)'; /* Add border for visibility */
+                                     secCard.style.borderWidth = '3px';
+                                     secCard.style.borderStyle = 'solid';
+                                     setTimeout(() => {
+                                         secCard.style.boxShadow = 'var(--shadow)'; // Revert after highlight
+                                         secCard.style.borderColor = 'transparent'; // Revert border
+                                         secCard.style.borderWidth = '0';
+                                     }, 2000);
+                                 }
+                             });
+
+                         }
+                        resultsContainer.style.display = 'none'; // Hide results after selection
                     };
+                    
                     listItem.appendChild(link);
                     resultsList.appendChild(listItem);
                 }
@@ -1185,9 +1233,43 @@
                 document.getElementById('searchResults').style.display = 'none';
             }
         });
+
+        // Keep search results visible when clicking inside them
+        document.getElementById('searchResults').addEventListener('click', function(event) {
+             event.stopPropagation(); // Prevent click from closing the results
+        });
+
+        // Keep search input/button clicks from closing results
+        document.querySelector('.search-bar').addEventListener('click', function(event) {
+             event.stopPropagation();
+        });
+
+        // Add scroll behavior for navigation links
+        document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+                 // Also hide mobile menu if open
+                const nav = document.querySelector('nav');
+                if (nav.style.display === 'block') {
+                     nav.style.display = 'none';
+                }
+            });
+        });
+
+         // Add scroll behavior for CTA button
+        document.querySelector('.hero .cta-button').addEventListener('click', function (e) {
+            e.preventDefault();
+
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+
+
     </script>
 </body>
 </html>
-
-  
-  
