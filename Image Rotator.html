@@ -1,111 +1,367 @@
-  
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Image Rotator/Flipper Tool</title>
+  <title>Advanced Image Rotator/Flipper</title>
+
+  <!-- Optional: Add a simple icon library link if you want icons in buttons -->
+  <!-- Example using Font Awesome (requires internet connection) -->
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
+
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #ffffff;
-      color: #333;
+    /* CSS Variables */
+    :root {
+      --primary-color: #1e40af; /* Darker Blue */
+      --primary-dark: #172554;
+      --primary-light: #a78bfa; /* Light Violet */
+      --primary-very-light: #ede9fe; /* Very Light Violet */
+      --secondary-color: #059669; /* Green for download */
+      --secondary-dark: #047857;
+      --text-color: #374151; /* Darker grey */
+      --label-color: #4b5563;
+      --background-color: #f3e8ff; /* Very light purple background */
+      --surface-color: #ffffff; /* White */
+      --border-color: #d1d5db; /* Light grey */
+      --error-color: #dc2626; /* Red */
+      --warning-color: #f59e0b; /* Orange */
+    }
+
+    /* Basic Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+
     .container {
+      background-color: var(--surface-color);
+      padding: 2.5rem;
+      border-radius: 16px;
       max-width: 600px;
-      margin: 0 auto;
-      text-align: center;
-      padding: 20px;
+      width: 100%;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
     }
 
     h1 {
-      color: #007bff;
+      text-align: center;
+      color: var(--primary-dark);
+      margin-bottom: 1rem;
+      font-size: 2.2rem;
+      font-weight: 700;
     }
 
-    .upload-section {
-      margin: 20px 0;
-    }
-
-    .controls {
-      margin: 20px 0;
+    .section {
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background-color: var(--surface-color);
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+     .section.disabled {
+        opacity: 0.6; /* More obvious disable */
+        pointer-events: none; /* Disable interactions */
+        filter: grayscale(50%); /* Optional: make it look disabled */
+     }
+
+
+    .section h2 {
+        color: var(--primary-color);
+        font-size: 1.4rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--background-color);
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.6rem;
+        font-weight: 600;
+        color: var(--label-color);
+    }
+
+    /* --- Drop Zone Styling --- */
+    .drop-zone {
+        border: 2px dashed var(--primary-light);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        position: relative;
+    }
+
+    .drop-zone:hover {
+        background-color: var(--primary-very-light); /* Light hover effect */
+        border-color: var(--primary-color);
+    }
+
+    .drop-zone.dragover {
+        background-color: var(--primary-light); /* Slightly darker */
+        border-color: var(--primary-dark);
+    }
+
+    .drop-zone input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 10;
+    }
+
+    .drop-zone .upload-icon {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        margin-bottom: 0.8rem;
+    }
+
+    .drop-zone .upload-text {
+        font-size: 1.1rem;
+        color: var(--label-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .drop-zone .file-name {
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin-top: 0.5rem;
+        word-break: break-all;
+    }
+
+     .file-info {
+        font-size: 0.9rem;
+        color: var(--label-color);
+        margin-top: 0.5rem;
+        text-align: center;
+     }
+
+    /* --- Controls Styling --- */
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.8rem;
     }
 
     button {
-      background-color: #007bff;
+      background-color: var(--primary-color);
       color: white;
       border: none;
-      padding: 10px 20px;
-      margin: 5px;
+      padding: 0.8rem 1.2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
-      border-radius: 5px;
-      flex: 1 1 40%;
-      max-width: 180px;
+      transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.1s ease; /* Added transform for hover effect */
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Subtle button shadow */
     }
 
-    button:hover {
-      background-color: #0056b3;
+    button:hover:not(:disabled) {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px); /* Lift button slightly on hover */
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15); /* Enhance shadow on hover */
     }
 
-    .preview {
-      margin: 20px 0;
-      max-height: 300px;
-      overflow: auto;
-      border: 1px solid #ddd;
-      padding: 10px;
+     button:active:not(:disabled) {
+        transform: translateY(0); /* Press effect */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+     }
+
+
+    button:disabled {
+        background-color: var(--primary-light);
+        cursor: not-allowed;
+        opacity: 0.9;
+        transform: none; /* Remove hover transform when disabled */
+         box-shadow: none; /* Remove shadow when disabled */
     }
+
+    /* Style for optional icons within buttons */
+    button i {
+        margin-right: 8px;
+    }
+
+
+    /* --- Preview Area Styling --- */
+    .preview-section {
+        /* Uses .section styling */
+        min-height: 200px; /* Ensure minimum height even without image */
+        display: flex; /* Override section display */
+        flex-direction: column; /* Stack heading and preview */
+        gap: 1.2rem; /* Space between heading and preview-area */
+    }
+
+     .preview-area {
+        flex-grow: 1; /* Allow preview area to take available space */
+        display: flex;
+        justify-content: center; /* Center the image */
+        align-items: center;
+        min-height: 150px; /* Minimum height for the image area itself */
+        padding: 1rem; /* Added padding inside preview area */
+        border: 1px solid var(--border-color); /* Border around image area */
+        border-radius: 8px;
+        background-color: var(--primary-very-light); /* Lighter background for preview area */
+        overflow: hidden;
+    }
+
 
     #image-preview {
+      display: block;
       max-width: 100%;
-      max-height: 280px;
+      max-height: 350px;
+      height: auto;
+      object-fit: contain;
+      border-radius: 8px;
       transition: transform 0.3s ease;
+      /* Initial transform is NOT set here */
+       /* Add a placeholder/background when no image is loaded */
+       background-color: #e0e0e0; /* Grey placeholder background */
     }
 
-    .download {
-      margin-top: 20px;
+     /* Hide the img element completely if src is empty or '#' */
+     #image-preview:not([src]),
+     #image-preview[src=""] {
+         display: none;
+     }
+
+
+    /* --- Download Styling --- */
+    .download-section {
+       /* Uses .section styling */
     }
 
+    .download-area {
+        text-align: center;
+    }
+
+
+    .download-btn {
+      display: inline-block;
+      margin-top: 0;
+      padding: 0;
+      text-decoration: none;
+      width: 100%;
+    }
+
+     .download-btn button {
+         width: 100%;
+         margin-top: 0;
+          background-color: var(--secondary-color); /* Green color */
+          box-shadow: 0 4px 8px rgba(16,185,129,0.25); /* Green shadow */
+     }
+      .download-btn button:hover:not(:disabled) {
+        background-color: var(--secondary-dark);
+         transform: translateY(-2px); /* Lift button slightly on hover */
+         box-shadow: 0 6px 12px rgba(16,185,129,0.35); /* Enhance shadow on hover */
+      }
+      .download-btn button:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(16,185,129,0.25);
+     }
+
+
+    /* Responsive adjustments */
     @media (max-width: 600px) {
       .container {
-        padding: 10px;
+        padding: 1.5rem;
       }
-
-      button {
-        width: 100%;
-        max-width: none;
-        margin-top: 10px;
+      .section {
+          padding: 1rem;
       }
+       .controls {
+            grid-template-columns: 1fr; /* Stack buttons vertically */
+       }
+       button {
+           padding: 0.9rem 1.5rem; /* Increase padding when stacked */
+       }
+       .preview-area {
+           padding: 1rem;
+           min-height: 100px;
+       }
+       #image-preview {
+            max-height: 250px; /* Adjust max height on smaller screens */
+       }
     }
+     @media (min-width: 601px) and (max-width: 768px) {
+         .controls {
+            grid-template-columns: repeat(2, 1fr); /* 2 buttons per row on medium screens */
+         }
+     }
+
+
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Image Rotator/Flipper Tool</h1>
-    <div class="upload-section">
-      <input type="file" id="image-upload" accept="image/*">
+    <h1>🔄 Image Rotator/Flipper</h1> <!-- Added an emoji -->
+
+    <div class="section upload-section">
+      <h2>Upload Image</h2>
+       <!-- Drop Zone -->
+      <div id="dropZone" class="drop-zone">
+        <input type="file" id="image-upload" accept="image/*">
+        <div class="upload-icon">📂</div> <!-- Placeholder icon -->
+        <p class="upload-text">Drag & drop an image here, or click to select file</p>
+        <p id="selectedFileName" class="file-name"></p> <!-- Placeholder for file name -->
+      </div>
     </div>
-    <div class="controls">
-      <button id="rotate-left">Rotate Left</button>
-      <button id="rotate-right">Rotate Right</button>
-      <button id="flip-horizontal">Flip Horizontal</button>
-      <button id="flip-vertical">Flip Vertical</button>
+
+    <div class="section controls-section">
+       <h2>Controls</h2>
+        <div class="controls">
+             <!-- Optional icons can be added here, e.g.: -->
+            <button id="rotate-left"><i class="fas fa-rotate-left"></i> Rotate Left (90°)</button>
+            <button id="rotate-right"><i class="fas fa-rotate-right"></i> Rotate Right (90°)</button>
+            <button id="flip-horizontal"><i class="fas fa-arrows-left-right"></i> Flip Horizontal</button>
+            <button id="flip-vertical"><i class="fas fa-arrows-up-down"></i> Flip Vertical</button>
+        </div>
     </div>
-    <div class="preview">
-      <img id="image-preview" src="" alt="Image Preview" />
+
+    <div class="section preview-section">
+        <h2>Preview</h2>
+         <!-- The preview area contains the image -->
+        <div class="preview-area">
+             <img id="image-preview" src="" alt="Image Preview" />
+              <!-- Message area could go here if JS was modified to use it -->
+              <!-- <div id="message" style="text-align: center; min-height: 1.5em;"></div> -->
+        </div>
     </div>
-    <div class="download">
-      <a id="download-link" href="#" download="edited_image.jpg">
-        <button>Download Image</button>
-      </a>
+
+    <div class="section download-section">
+         <h2>Download</h2>
+        <div class="download-area">
+            <a id="download-link" href="#" download="edited_image.jpg" class="download-btn">
+              <button>Download Image</button>
+            </a>
+             <!-- Optional: File size info for downloaded file -->
+             <!-- <div id="downloadFileInfo" class="file-info" style="display: none;"></div> -->
+        </div>
     </div>
   </div>
 
   <script>
+    // --- Existing JavaScript Code (Copied Verbatim) ---
     let imagePreview = document.getElementById('image-preview');
     let imageUpload = document.getElementById('image-upload');
     let rotateLeftBtn = document.getElementById('rotate-left');
@@ -127,9 +383,22 @@
           rotation = 0;
           flipHorizontal = false;
           flipVertical = false;
-          imagePreview.style.transform = '';
+          imagePreview.style.transform = ''; // Reset transform on new image load
+          // Added: Update file name display
+           const fileName = file.name;
+           document.getElementById('selectedFileName').textContent = `Selected: ${fileName}`;
+           document.getElementById('dropZone').classList.add('has-file');
+           // Added: Enable controls and download
+           document.querySelector('.controls-section').classList.remove('disabled');
+           document.querySelector('.download-section').classList.remove('disabled');
+           // Initial download link update after image load
+           updateDownloadLink();
+
         };
         reader.readAsDataURL(file);
+      } else {
+         // Handle case where user cancels file selection
+         resetToolUI(); // Call a function to clear/reset UI
       }
     });
 
@@ -154,42 +423,111 @@
     });
 
     function updateImage() {
+      // Ensure rotation stays within a reasonable range to prevent overflow issues (e.g., -360 to 360)
+       rotation = rotation % 360;
+       if (rotation < -180) rotation += 360; // Keep it within +/- 180 for simpler values visually
+       if (rotation > 180) rotation -= 360;
+
       imagePreview.style.transform = `rotate(${rotation}deg)` +
         (flipHorizontal ? ' scaleX(-1)' : '') +
         (flipVertical ? ' scaleY(-1)' : '');
-      updateDownloadLink();
+
+      updateDownloadLink(); // Update download link whenever the visual changes
     }
 
     function updateDownloadLink() {
-      if (!imagePreview.src) return;
+      if (!imagePreview.src || imagePreview.src === '#') {
+          // If no image is loaded, hide download section or disable button
+          document.getElementById('download-link').style.display = 'none';
+          document.querySelector('.download-section').classList.add('disabled');
+          return;
+      }
+
+      document.getElementById('download-link').style.display = 'inline-block'; // Show download link
+      document.querySelector('.download-section').classList.remove('disabled'); // Enable download section
+
 
       let canvas = document.createElement('canvas');
       let ctx = canvas.getContext('2d');
       let img = new Image();
+      // Setting crossOrigin is important if loading images from different domains,
+      // but with Data URLs (from FileReader), it's usually not necessary.
+      // Keep it as a good practice if imagePreview.src *could* be a network URL.
       img.crossOrigin = "anonymous";
-      img.src = imagePreview.src;
+      img.src = imagePreview.src; // Use the source of the preview image
 
       img.onload = function() {
         let w = img.width;
         let h = img.height;
 
-        if (rotation % 180 !== 0) {
+        // Calculate canvas dimensions based on rotation
+        // Width/height swap only for 90 or 270 degree rotations
+        const absRotation = Math.abs(rotation % 360);
+        const is90or270 = (absRotation === 90 || absRotation === 270);
+
+        if (is90or270) {
           canvas.width = h;
           canvas.height = w;
-        } else {
+        } else { // 0, 180, 360, etc.
           canvas.width = w;
           canvas.height = h;
         }
 
+        // Translate origin to center of canvas, then rotate, then scale (for flip)
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate(rotation * Math.PI / 180);
         ctx.scale(flipHorizontal ? -1 : 1, flipVertical ? -1 : 1);
+
+        // Draw the image centered, compensating for the translation
         ctx.drawImage(img, -w / 2, -h / 2);
 
-        downloadLink.href = canvas.toDataURL("image/jpeg");
+        // Generate Data URL (can choose format, JPEG is common for downloads)
+        // Let's default to PNG for lossless quality, or maybe JPEG with quality
+        // The original code used JPEG, let's stick to that or make it an option (requires JS change).
+        // Sticking to JPEG as per original.
+         // Use toBlob instead of toDataURL for better performance/memory, especially for large images
+         // This requires an async approach and is a JS change, so we'll keep toDataURL as requested.
+         downloadLink.href = canvas.toDataURL("image/jpeg", 0.9); // Added quality 0.9
+
+          // Optional: Update download file name based on original? Requires JS change
+           // const originalFileName = imageUpload.files[0]?.name.split('.').slice(0, -1).join('.') || 'edited_image';
+           // downloadLink.download = `${originalFileName}.jpg`;
+
+           // Optional: Display downloaded file size? Requires JS change and toBlob
       };
+       // Handle image loading errors for the canvas drawing
+       img.onerror = function() {
+           console.error("Error loading image for canvas processing.");
+           // Maybe show an error message in the UI if JS was allowed to change
+       };
+
     }
+
+    // Added: Function to reset the UI state when file selection is cancelled or initially
+    function resetToolUI() {
+         imagePreview.src = ''; // Clear preview source
+         imagePreview.style.transform = ''; // Reset visual transform
+         rotation = 0;
+         flipHorizontal = false;
+         flipVertical = false;
+         document.getElementById('selectedFileName').textContent = ''; // Clear file name
+         document.getElementById('dropZone').classList.remove('has-file'); // Reset drop zone style
+
+         document.getElementById('download-link').style.display = 'none'; // Hide download link
+         document.querySelector('.controls-section').classList.add('disabled'); // Disable controls
+         document.querySelector('.download-section').classList.add('disabled'); // Disable download section
+
+         // Optional: Hide preview section if image is cleared
+         // document.querySelector('.preview-section').style.display = 'none';
+    }
+
+    // --- Initial Setup ---
+     // Disable controls and download link until an image is uploaded
+    document.querySelector('.controls-section').classList.add('disabled');
+    document.querySelector('.download-section').classList.add('disabled');
+     document.getElementById('download-link').style.display = 'none'; // Hide the download link initially
+     // Hide the image preview element itself until an image is loaded (handled by CSS :not([src]))
+
   </script>
 </body>
 </html>
-  
