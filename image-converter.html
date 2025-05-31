@@ -1,101 +1,501 @@
-  
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Image Converter Tool</title>
+  <title>Super Image Converter</title>
   <style>
+    /* CSS Variables for easy theme changes */
+    :root {
+      --primary-color: #3b82f6; /* Slightly brighter blue */
+      --primary-dark: #2563eb;
+      --primary-light: #93c5fd;
+      --secondary-color: #10b981; /* Green for success/download */
+      --secondary-dark: #059669;
+      --text-color: #374151; /* Darker grey for main text */
+      --label-color: #4b5563; /* Slightly lighter grey for labels */
+      --background-color: #f3f4f6; /* Soft background */
+      --surface-color: #ffffff; /* White for cards/containers */
+      --border-color: #d1d5db; /* Light grey border */
+      --error-color: #ef4444; /* Red for errors */
+    }
+
+    /* Basic Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      background-color: #ffffff;
-      color: #2563eb;
-      font-family: Arial, sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* More modern font stack */
       display: flex;
       justify-content: center;
-      align-items: center;
-      flex-direction: column;
+      align-items: flex-start; /* Align items to start */
       min-height: 100vh;
-      padding: 1rem;
-      box-sizing: border-box;
+      padding: 2rem 1rem; /* More padding, responsive horizontal padding */
+      line-height: 1.6; /* Better readability */
     }
+
     .container {
-      padding: 2rem;
-      border-radius: 16px;
-      max-width: 500px;
+      background-color: var(--surface-color);
+      padding: 2.5rem;
+      border-radius: 16px; /* Rounder corners */
+      max-width: 600px;
       width: 100%;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      background-color: #ffffff;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+      display: flex;
+      flex-direction: column;
+      gap: 2rem; /* Increased space between sections */
     }
-    input, select, button {
+
+    h1 {
+      text-align: center;
+      color: var(--primary-dark);
+      margin-bottom: 1rem; /* Less margin below title */
+      font-size: 2rem; /* Slightly larger title */
+      font-weight: 700;
+    }
+
+    .section {
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 12px; /* Match container roundness */
+      background-color: var(--surface-color);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem; /* Space within sections */
+    }
+
+    .section h2 {
+        color: var(--primary-color);
+        font-size: 1.3rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--background-color); /* Lighter separator */
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.6rem; /* More space below label */
+        font-weight: 600; /* Semi-bold */
+        color: var(--label-color);
+    }
+
+    /* --- Drop Zone Styling --- */
+    .drop-zone {
+        border: 2px dashed var(--primary-light); /* Dashed border */
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        position: relative; /* Needed for absolute positioning of input */
+    }
+
+    .drop-zone:hover {
+        background-color: #eff6ff; /* Light blue hover effect */
+        border-color: var(--primary-color);
+    }
+
+    .drop-zone.dragover {
+        background-color: #dbeafe; /* Slightly darker blue when dragging over */
+        border-color: var(--primary-dark);
+    }
+
+    .drop-zone input[type="file"] {
+        position: absolute; /* Cover the entire drop zone */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0; /* Hide the actual input */
+        cursor: pointer;
+        z-index: 10; /* Make sure it's clickable */
+    }
+
+    .drop-zone .upload-icon {
+        font-size: 2.5rem; /* Large icon */
+        color: var(--primary-color);
+        margin-bottom: 0.8rem;
+    }
+
+    .drop-zone .upload-text {
+        font-size: 1.1rem;
+        color: var(--label-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .drop-zone .file-name {
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin-top: 0.5rem;
+        word-break: break-all; /* Prevent long names from overflowing */
+    }
+
+    /* --- General Form Element Styling --- */
+    select {
       width: 100%;
-      margin-top: 1rem;
-      padding: 0.5rem;
-      border: 2px solid #2563eb;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color);
       border-radius: 8px;
       font-size: 1rem;
-      color: #2563eb;
-      background-color: #ffffff;
+      color: var(--text-color);
+      background-color: var(--surface-color);
+      transition: border-color 0.2s ease-in-out;
+      appearance: none; /* Remove default select arrow */
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%23374151" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>'); /* Custom arrow */
+      background-repeat: no-repeat;
+      background-position: right 0.7em top 50%, 0 0;
+      background-size: 0.65em auto, 100%;
     }
+
+    select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Softer shadow */
+    }
+
+
     button {
-      background-color: #2563eb;
+      width: 100%;
+      padding: 0.9rem 1.5rem; /* More vertical padding */
+      background-color: var(--primary-color);
       color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #1e40af;
-    }
-    img {
-      max-width: 100%;
-      margin-top: 1rem;
+      border: none;
       border-radius: 8px;
+      font-size: 1.1rem; /* Slightly larger text */
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
     }
+
+    button:hover:not(:disabled) {
+      background-color: var(--primary-dark);
+    }
+
+    button:disabled {
+        background-color: var(--primary-light);
+        cursor: not-allowed;
+        opacity: 0.9; /* Less opacity reduction */
+    }
+
+    /* --- Preview Area Styling --- */
+    .preview-area {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem; /* Increased space between previews */
+        align-items: center;
+    }
+
+    .preview-item {
+        width: 100%;
+        text-align: center;
+        background-color: var(--background-color); /* Subtle background for preview items */
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .preview-item h3 {
+        color: var(--primary-dark);
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .preview-item img {
+        max-width: 100%;
+        height: auto;
+        max-height: 350px; /* Slightly taller previews */
+        margin: 0.8rem auto; /* More space around image */
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        display: block;
+        object-fit: contain; /* Ensure the whole image is visible */
+    }
+
     .download-btn {
       display: inline-block;
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
-      background-color: #2563eb;
+      margin-top: 1.5rem; /* More space above button */
+      padding: 0.8rem 1.8rem;
+      background-color: var(--secondary-color);
       color: white;
       text-align: center;
       border-radius: 8px;
       text-decoration: none;
+      font-weight: 600;
+      transition: background-color 0.2s ease-in-out;
+      box-shadow: 0 4px 8px rgba(0,185,129,0.2); /* Subtle shadow for download button */
     }
+
     .download-btn:hover {
-      background-color: #1e40af;
+      background-color: var(--secondary-dark);
     }
+
+    #message {
+        text-align: center;
+        min-height: 1.5em; /* Reserve space */
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .loading #message {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .error #message {
+        color: var(--error-color);
+        font-weight: 500;
+    }
+
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+        .preview-area {
+            flex-direction: row; /* Side-by-side */
+            justify-content: space-between; /* Space them out */
+            gap: 1.5rem; /* Reduced gap between side-by-side items */
+        }
+        .preview-item {
+             width: 48%; /* Allow space between */
+             padding: 1.5rem; /* More padding on larger screens */
+        }
+         .container {
+            padding: 3rem; /* More padding on larger screens */
+        }
+    }
+
   </style>
+  <!-- Optional: Add a simple icon library link if you want a real upload icon -->
+  <!-- Example using Font Awesome (requires internet connection) -->
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
 </head>
 <body>
   <div class="container">
-    <h1>Image Converter Tool</h1>
-    <input type="file" id="imageInput" accept="image/*" />
-    <select id="formatSelect">
-      <option value="png">PNG</option>
-      <option value="jpeg">JPG</option>
-      <option value="gif">GIF</option>
-      <option value="webp">WebP</option>
-    </select>
-    <button onclick="convertImage()">Convert Image</button>
+    <h1>🖼️ Super Image Converter</h1> <!-- Added an emoji for fun -->
 
-    <div id="previewContainer"></div>
+    <div class="section">
+      <h2>Upload Your Image</h2>
+      <!-- Drop Zone -->
+      <div id="dropZone" class="drop-zone">
+        <input type="file" id="imageInput" accept="image/*" />
+        <div class="upload-icon">⬆️</div> <!-- Placeholder or actual icon -->
+        <p class="upload-text">Drag & drop an image here, or click to select file</p>
+        <p id="selectedFileName" class="file-name"></p> <!-- To display selected file name -->
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Convert Options</h2>
+       <label for="formatSelect">Choose Target Format:</label>
+      <select id="formatSelect">
+        <option value="png">PNG</option>
+        <option value="jpeg">JPG</option>
+        <option value="gif">GIF (Note: Converts only the first frame)</option>
+        <option value="webp">WebP</option>
+      </select>
+      <!-- Optional: Add a quality input for JPG/WebP -->
+      <!-- <div id="qualityOption" style="display: none; margin-top: 1rem;">
+          <label for="quality">Quality (0-100 for JPG/WebP):</label>
+          <input type="number" id="quality" value="90" min="0" max="100" style="width: auto; display: inline-block; margin-left: 0.5rem;">
+      </div> -->
+
+      <button id="convertBtn">Convert Image</button>
+    </div>
+
+    <div class="section preview-section" style="display: none;">
+        <h2>Results</h2>
+        <div id="message"></div> <!-- For messages like errors or loading -->
+        <div class="preview-area">
+            <div id="originalPreview" class="preview-item" style="display: none;">
+                <h3>Original Image</h3>
+                <img id="originalImg" src="#" alt="Original Image Preview"/>
+            </div>
+            <div id="convertedPreview" class="preview-item" style="display: none;">
+                <h3>Converted Image</h3>
+                <img id="convertedImg" src="#" alt="Converted Image Preview"/>
+                <a id="downloadLink" class="download-btn" href="#" download="converted-image" style="display: none;">Download</a>
+            </div>
+        </div>
+    </div>
+
   </div>
 
   <script>
-    let originalFile;
+    const imageInput = document.getElementById('imageInput');
+    const dropZone = document.getElementById('dropZone');
+    const selectedFileNameSpan = document.getElementById('selectedFileName'); // Span to show file name
+    const formatSelect = document.getElementById('formatSelect');
+    const convertBtn = document.getElementById('convertBtn');
+    const messageDiv = document.getElementById('message');
+    const previewSection = document.querySelector('.preview-section');
+    const originalPreviewDiv = document.getElementById('originalPreview');
+    const originalImg = document.getElementById('originalImg');
+    const convertedPreviewDiv = document.getElementById('convertedPreview');
+    const convertedImg = document.getElementById('convertedImg');
+    const downloadLink = document.getElementById('downloadLink');
+    // const qualityInput = document.getElementById('quality'); // For optional quality
+    // const qualityOptionDiv = document.getElementById('qualityOption'); // For optional quality
 
-    document.getElementById('imageInput').addEventListener('change', function(e) {
-      originalFile = e.target.files[0];
-      const previewContainer = document.getElementById('previewContainer');
-      previewContainer.innerHTML = '<p>Original Preview:</p>' + '<img src="' + URL.createObjectURL(originalFile) + '" alt="Original Image">';
+    let originalFile = null;
+    let originalObjectURL = null;
+    let convertedObjectURL = null;
+
+    // --- Helper Functions ---
+
+    // Function to clear previous previews, messages, and reset UI state
+    function clearAll() {
+      // Revoke existing URLs
+      if (originalObjectURL) {
+        URL.revokeObjectURL(originalObjectURL);
+        originalObjectURL = null;
+      }
+      if (convertedObjectURL) {
+        URL.revokeObjectURL(convertedObjectURL);
+        convertedObjectURL = null;
+      }
+
+      // Hide preview elements and reset sources
+      originalPreviewDiv.style.display = 'none';
+      originalImg.src = '#';
+      originalImg.style.display = 'none';
+
+      convertedPreviewDiv.style.display = 'none';
+      convertedImg.src = '#';
+      convertedImg.style.display = 'none';
+      downloadLink.href = '#';
+      downloadLink.style.display = 'none';
+
+      // Clear messages and hide preview section
+      messageDiv.textContent = '';
+      previewSection.style.display = 'none';
+      previewSection.classList.remove('loading', 'error'); // Remove state classes
+
+      // Reset file input and drop zone UI
+      imageInput.value = ''; // Clear the file input value
+      originalFile = null; // Clear the stored file
+      selectedFileNameSpan.textContent = ''; // Clear file name display
+      dropZone.classList.remove('has-file'); // Remove class indicating file is present
+    }
+
+    // Function to handle a selected/dropped file
+    function handleFile(file) {
+        clearAll(); // Clear previous state
+
+        if (!file) {
+            messageDiv.textContent = "No file selected.";
+            previewSection.style.display = 'block';
+            previewSection.classList.add('error');
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            messageDiv.textContent = "Please select an image file (JPG, PNG, GIF, etc.).";
+            previewSection.style.display = 'block';
+            previewSection.classList.add('error');
+            clearAll(); // Ensure full reset if wrong file type
+            return;
+        }
+
+        originalFile = file;
+        selectedFileNameSpan.textContent = `Selected: ${file.name}`;
+        dropZone.classList.add('has-file'); // Indicate a file is loaded
+
+        // Display original preview
+        originalObjectURL = URL.createObjectURL(originalFile);
+        originalImg.onload = () => {
+             // Image loaded into element, now can revoke if preferred,
+             // but keeping it active allows multiple conversions from the same file.
+             // Let's keep it active until a *new* file is selected or clearAll is called.
+        };
+        originalImg.src = originalObjectURL;
+        originalImg.style.display = 'block';
+        originalPreviewDiv.style.display = 'block';
+        previewSection.style.display = 'block'; // Show the preview section
+
+        messageDiv.textContent = 'File ready for conversion.';
+        previewSection.classList.remove('error'); // Clear any previous error class
+    }
+
+    // --- Event Listeners ---
+
+    // Handle file selection via click
+    imageInput.addEventListener('change', function(e) {
+      handleFile(e.target.files[0]);
     });
 
-    function convertImage() {
-      if (!originalFile) return alert("Please upload an image first.");
+    // Handle drag and drop events
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault(); // Prevent default behavior (opening file in new tab)
+        dropZone.classList.add('dragover');
+        messageDiv.textContent = 'Drop the image here...';
+        previewSection.style.display = 'block'; // Show section to display message
+        previewSection.classList.remove('error');
+    });
 
-      const format = document.getElementById("formatSelect").value;
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+         // Restore message if a file was already selected
+        if (originalFile) {
+             messageDiv.textContent = 'File ready for conversion.';
+        } else {
+            messageDiv.textContent = ''; // Clear message if no file
+             previewSection.style.display = 'none'; // Hide section if no file
+        }
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault(); // Prevent default behavior
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0]; // Get the dropped file
+        handleFile(file);
+    });
+
+    // Handle format select change (Optional: show/hide quality)
+    // formatSelect.addEventListener('change', function() {
+    //     const format = formatSelect.value;
+    //     if (format === 'jpeg' || format === 'webp') {
+    //         qualityOptionDiv.style.display = 'block';
+    //     } else {
+    //         qualityOptionDiv.style.display = 'none';
+    //     }
+    // });
+
+
+    // Handle convert button click
+    convertBtn.addEventListener('click', function() {
+      if (!originalFile) {
+        messageDiv.textContent = "Please upload an image first.";
+        previewSection.style.display = 'block';
+        previewSection.classList.add('error');
+        return;
+      }
+
+      // Clear previous converted image and message
+      if (convertedObjectURL) {
+        URL.revokeObjectURL(convertedObjectURL);
+        convertedObjectURL = null;
+      }
+      convertedImg.src = '#';
+      convertedImg.style.display = 'none';
+      downloadLink.href = '#';
+      downloadLink.style.display = 'none';
+      convertedPreviewDiv.style.display = 'none'; // Hide converted preview
+
+      const format = formatSelect.value;
       const reader = new FileReader();
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       const img = new Image();
+
+      // Show loading state
+      messageDiv.textContent = `Converting to ${format.toUpperCase()}...`;
+      convertBtn.disabled = true;
+      previewSection.classList.add('loading');
+      previewSection.classList.remove('error');
+
 
       reader.onload = function(event) {
         img.onload = function() {
@@ -103,21 +503,72 @@
           canvas.height = img.height;
           ctx.drawImage(img, 0, 0);
 
+          const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/' + format;
+          // const quality = format === 'jpeg' || format === 'webp' ? parseFloat(qualityInput.value) / 100 : 1; // Use quality input
+          const quality = format === 'jpeg' ? 0.9 : 1; // Default quality
+
+
           canvas.toBlob(function(blob) {
-            const convertedUrl = URL.createObjectURL(blob);
-            const previewContainer = document.getElementById("previewContainer");
-            previewContainer.innerHTML += '<p>Converted Preview:</p>' +
-              '<img src="' + convertedUrl + '" alt="Converted Image">' +
-              '<a class="download-btn" href="' + convertedUrl + '" download="converted-image.' + format + '">Download Converted Image</a>';
-          }, 'image/' + format);
+            // Remove loading state
+            messageDiv.textContent = '';
+            convertBtn.disabled = false;
+            previewSection.classList.remove('loading');
+
+            if (blob) {
+              convertedObjectURL = URL.createObjectURL(blob);
+
+              // Display converted preview
+              convertedImg.onload = () => {
+                 // URL.revokeObjectURL can be called here if you want to release memory immediately
+                 // after the img element has loaded the data. But keeping it active
+                 // doesn't hurt much unless dealing with many large images.
+              };
+              convertedImg.src = convertedObjectURL;
+              convertedImg.style.display = 'block';
+              convertedPreviewDiv.style.display = 'block'; // Show the converted preview div
+
+              // Set up download link
+              const originalFileName = originalFile.name.split('.').slice(0, -1).join('.') || 'image';
+              downloadLink.href = convertedObjectURL;
+              downloadLink.download = `${originalFileName}-converted.${format}`;
+              downloadLink.textContent = `Download ${format.toUpperCase()} (${(blob.size / 1024).toFixed(2)} KB)`; // Show file size
+              downloadLink.style.display = 'inline-block';
+
+              messageDiv.textContent = 'Conversion successful!';
+
+
+            } else {
+              messageDiv.textContent = "Error converting image. Could not create blob.";
+              previewSection.classList.add('error');
+              console.error("Canvas toBlob failed.");
+            }
+          }, mimeType, quality);
+
         };
-        img.src = event.target.result;
+        img.onerror = function() {
+            messageDiv.textContent = "Error loading image for conversion.";
+            convertBtn.disabled = false;
+            previewSection.classList.remove('loading');
+            previewSection.classList.add('error');
+            console.error("Error loading image from data URL.");
+        }
+        img.src = event.target.result; // Start loading the image data URL
       };
 
-      reader.readAsDataURL(originalFile);
-    }
+      reader.onerror = function() {
+          messageDiv.textContent = "Error reading file.";
+          convertBtn.disabled = false;
+          previewSection.classList.remove('loading');
+          previewSection.classList.add('error');
+          console.error("Error reading file:", reader.error);
+      }
+
+      reader.readAsDataURL(originalFile); // Read the file as a data URL
+    });
+
+    // Initial state: Hide the preview section
+    previewSection.style.display = 'none';
+
   </script>
 </body>
 </html>
-  
-  
