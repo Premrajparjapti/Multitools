@@ -1,154 +1,1134 @@
-  
-  <!DOCTYPE html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Image Cropper Tool</title>
+  <title>Advanced Image Cropper</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #e6f0ff;
-      color: #003366;
+    /* CSS Variables for easy theme changes */
+    :root {
+      --primary-color: #f59e0b; /* Amber */
+      --primary-dark: #d97706;
+      --primary-light: #fcd34d;
+      --secondary-color: #10b981; /* Green for download */
+      --secondary-dark: #059669;
+      --text-color: #374151; /* Darker grey for main text */
+      --label-color: #4b5563; /* Slightly lighter grey for labels */
+      --background-color: #fffbeb; /* Very light yellow background */
+      --surface-color: #ffffff; /* White for cards/containers */
+      --border-color: #d1d5db; /* Light grey border */
+      --error-color: #dc2626; /* Red for errors */
+      --warning-color: #f59e0b; /* Orange for warnings/notes */
+       --overlay-color: rgba(0, 0, 0, 0.6); /* Dark transparent for crop mask */
+       --overlay-border: 2px dashed rgba(255, 255, 255, 0.8); /* White dashed border for crop box */
+    }
+
+    /* Basic Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+
     .container {
+      background-color: var(--surface-color);
+      padding: 2.5rem;
+      border-radius: 16px;
       max-width: 600px;
-      margin: 2rem auto;
-      padding: 1rem;
-      background-color: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 100%;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
     }
 
     h1 {
       text-align: center;
-      color: #007bff;
+      color: var(--primary-dark);
+      margin-bottom: 1rem;
+      font-size: 2.2rem;
+      font-weight: 700;
     }
 
-    input[type="file"],
-    select {
-      display: block;
+    .section {
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background-color: var(--surface-color);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+     .section.disabled {
+        opacity: 0.7;
+        pointer-events: none; /* Disable interactions */
+     }
+
+
+    .section h2 {
+        color: var(--primary-color);
+        font-size: 1.4rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--background-color);
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.6rem;
+        font-weight: 600;
+        color: var(--label-color);
+    }
+
+    /* --- Drop Zone Styling --- */
+    .drop-zone {
+        border: 2px dashed var(--primary-light);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        position: relative;
+    }
+
+    .drop-zone:hover {
+        background-color: #fff7ed; /* Light yellow hover */
+        border-color: var(--primary-color);
+    }
+
+    .drop-zone.dragover {
+        background-color: #feebc9; /* Slightly darker */
+        border-color: var(--primary-dark);
+    }
+
+    .drop-zone input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 10;
+    }
+
+    .drop-zone .upload-icon {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        margin-bottom: 0.8rem;
+    }
+
+    .drop-zone .upload-text {
+        font-size: 1.1rem;
+        color: var(--label-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .drop-zone .file-name {
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin-top: 0.5rem;
+        word-break: break-all;
+    }
+
+     .file-info {
+        font-size: 0.9rem;
+        color: var(--label-color);
+        margin-top: 0.5rem;
+        text-align: center;
+     }
+
+
+    /* --- Form Elements --- */
+    select, input[type="number"] {
       width: 100%;
-      margin: 1rem 0;
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 1rem;
+      color: var(--text-color);
+      background-color: var(--surface-color);
+      transition: border-color 0.2s ease-in-out;
+    }
+    select {
+        appearance: none;
+        background-image: url('data:image/svg+xml;utf8,<svg fill="%23374151" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 0.7em top 50%, 0 0;
+        background-size: 0.65em auto, 100%;
     }
 
-    canvas {
-      max-width: 100%;
-      margin-top: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+
+     /* Quality Slider */
+    .quality-slider-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
     }
+
+    .quality-slider-container input[type="range"] {
+        flex-grow: 1;
+        margin: 0;
+        padding: 0;
+        height: 8px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: var(--background-color);
+        outline: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+     .quality-slider-container input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: var(--primary-color);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        margin-top: -6px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+     }
+
+     .quality-slider-container input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: var(--primary-color);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+     }
+
+     .quality-slider-container input[type="range"]:hover::-webkit-slider-thumb,
+     .quality-slider-container input[type="range"]:hover::-moz-range-thumb {
+        background: var(--primary-dark);
+     }
+
+
+    .quality-slider-container span {
+        font-weight: 600;
+        color: var(--primary-color);
+        min-width: 30px;
+        text-align: right;
+    }
+
 
     button {
-      background-color: #007bff;
-      color: white;
-      padding: 0.7rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
       width: 100%;
-      margin-top: 1rem;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    a#downloadLink {
-      display: none;
-      text-align: center;
-      background-color: #007bff;
+      padding: 0.9rem 1.5rem;
+      background-color: var(--primary-color);
       color: white;
-      padding: 0.7rem;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
       cursor: pointer;
-      text-decoration: none;
+      transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
       margin-top: 1rem;
     }
 
-    a#downloadLink:hover {
-      background-color: #0056b3;
+    button:hover:not(:disabled) {
+      background-color: var(--primary-dark);
     }
 
-    @media (max-width: 600px) {
-      .container {
-        margin: 1rem;
-        padding: 1rem;
-      }
+    button:disabled {
+        background-color: var(--primary-light);
+        cursor: not-allowed;
+        opacity: 0.9;
     }
+
+    /* --- Preview & Results Area --- */
+     /* Container for the original image and crop overlay */
+    .original-preview-container {
+        position: relative; /* Needed for absolute positioning of overlay */
+        width: 100%;
+        max-width: 100%;
+        display: flex; /* Use flex to center the image */
+        justify-content: center;
+        align-items: center;
+        background-color: #fef3c7; /* Light background for preview area */
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem; /* Space below preview */
+        /* Added these to help updateOverlay calculate correctly */
+         overflow: hidden;
+         min-height: 50px; /* Give it some minimum height */
+    }
+
+    .original-preview-container img {
+        display: block; /* Remove extra space below image */
+        max-width: 100%;
+        height: auto; /* Maintain aspect ratio */
+        max-height: 400px; /* Limit preview height */
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    /* Crop Overlay */
+    .crop-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* Allow clicks to pass through to the image input */
+        overflow: hidden; /* Hide the actual crop box children if they exceed bounds */
+         /* Ensure overlay covers exactly the image area */
+         /* Will be set by JS updateCropOverlay */
+    }
+
+    /* The dark mask outside the crop area */
+    .crop-overlay::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--overlay-color);
+    }
+
+    /* The visible crop box */
+    .crop-overlay-box {
+        position: absolute;
+        top: 50%; /* Centered vertically */
+        left: 50%; /* Centered horizontally */
+        transform: translate(-50%, -50%); /* Adjust for the box's own size */
+        border: var(--overlay-border);
+        /* Width/Height will be set by JS updateCropOverlay */
+         box-sizing: border-box; /* Include border in dimensions */
+    }
+
+
+    .preview-area {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    .preview-item {
+        width: 100%;
+        text-align: center;
+        background-color: var(--background-color);
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .preview-item h3 {
+        color: var(--primary-dark);
+        margin-bottom: 0.8rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .preview-item img {
+        max-width: 100%;
+        height: auto;
+        max-height: 300px;
+        margin: 0.8rem auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        display: block;
+        object-fit: contain;
+        border: 1px solid var(--border-color); /* Add a border for clarity */
+    }
+
+    .size-info {
+        font-size: 0.9rem;
+        color: var(--label-color);
+        margin-top: 0.5rem;
+    }
+
+    .size-comparison {
+        font-weight: 600;
+        color: var(--secondary-dark); /* Green for size reduction */
+    }
+     .size-comparison.increase {
+        color: var(--error-color); /* Red if size increases */
+     }
+
+
+    .download-btn {
+      display: inline-block;
+      margin-top: 1.5rem;
+      padding: 0.8rem 1.8rem;
+      background-color: var(--secondary-color);
+      color: white;
+      text-align: center;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background-color 0.2s ease-in-out;
+      box-shadow: 0 4px 8px rgba(16,185,129,0.25); /* Green shadow for download */
+    }
+
+    .download-btn:hover:not(:disabled) {
+      background-color: var(--secondary-dark);
+    }
+
+    #message {
+        text-align: center;
+        min-height: 1.5em;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .loading #message {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .error #message {
+        color: var(--error-color);
+        font-weight: 500;
+    }
+    .warning #message {
+        color: var(--warning-color);
+        font-weight: 500;
+    }
+
+
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+        .preview-area {
+            flex-direction: row;
+            justify-content: space-between;
+            gap: 1.5rem;
+        }
+        .preview-item {
+             width: 48%;
+             padding: 1.5rem;
+        }
+         .container {
+            padding: 3rem;
+        }
+         /* Ensure original preview container behaves well */
+         .original-preview-container {
+            max-height: 500px; /* Can increase max height on larger screens */
+         }
+    }
+
   </style>
+  <!-- Optional: Add a simple icon library link if you want a real upload icon -->
+  <!-- Example using Font Awesome (requires internet connection) -->
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
 </head>
 <body>
   <div class="container">
-    <h1>Image Cropper</h1>
-    <input type="file" id="upload" accept="image/*" />
+    <h1>✂️ Image Cropper</h1> <!-- Added an emoji -->
 
-    <select id="aspectRatio">
-      <option value="1">1:1 (Square)</option>
-      <option value="16/9">16:9</option>
-      <option value="4/3">4:3</option>
-      <option value="3/2">3:2</option>
-      <option value="21/9">21:9</option>
-    </select>
+    <div class="section">
+      <h2>Upload Image</h2>
+      <!-- Drop Zone -->
+      <div id="dropZone" class="drop-zone">
+        <input type="file" id="imageInput" accept="image/*" />
+        <div class="upload-icon">📂</div> <!-- Placeholder or actual icon -->
+        <p class="upload-text">Drag & drop image here, or click to select</p>
+        <p id="selectedFileName" class="file-name"></p>
+      </div>
+       <div id="originalFileInfo" class="file-info" style="display: none;"></div> <!-- Original File Info (Size & Dimensions) -->
+    </div>
 
-    <button onclick="resizeImage()">Apply Aspect Ratio</button>
-    <canvas id="canvas"></canvas>
-    <a id="downloadLink" download="cropped-image.png">Download Cropped Image</a>
+    <div class="section" id="optionsSection" style="display: none;">
+      <h2>Crop Options</h2>
+
+      <label for="aspectRatioSelect">Aspect Ratio:</label>
+      <select id="aspectRatioSelect">
+        <option value="original">Original</option>
+        <option value="1">1:1 (Square)</option>
+        <option value="16/9">16:9</option>
+        <option value="9/16">9:16</option>
+        <option value="4/3">4:3</option>
+        <option value="3/4">3:4</option>
+        <option value="3/2">3:2</option>
+        <option value="2/3">2:3</option>
+        <option value="21/9">21:9 (Ultrawide)</option>
+        <option value="9/21">9:21 (Tall)</option>
+         <!-- Add more ratios as needed -->
+      </select>
+
+      <label for="formatSelect">Output Format:</label>
+      <select id="formatSelect">
+        <option value="png">PNG</option>
+        <option value="jpeg">JPG</option>
+        <option value="webp">WebP</option>
+      </select>
+
+      <label for="quality">Quality (for JPG/WebP):</label>
+      <div class="quality-slider-container">
+          <input type="range" id="quality" value="90" min="1" max="100" step="1" />
+          <span id="qualityValue">90</span>%
+      </div>
+       <p class="file-info" id="qualityNote" style="display: none; color: var(--warning-color);"></p>
+
+
+      <button id="cropBtn">Crop & Download</button>
+    </div>
+
+     <div class="section preview-section" style="display: none;">
+         <h2>Preview</h2>
+        <div id="message"></div> <!-- For messages like errors or loading -->
+        <div class="original-preview-container" id="originalPreviewContainer" style="display: none;">
+            <img id="originalImg" src="#" alt="Original Image Preview"/>
+             <div class="crop-overlay" id="cropOverlay" style="display: none;">
+                 <div class="crop-overlay-box"></div>
+             </div>
+        </div>
+     </div>
+
+
+    <div class="section result-section" id="croppedResultSection" style="display: none;">
+        <h2>Result</h2>
+        <div class="preview-area">
+            <div id="croppedPreview" class="preview-item" style="display: none;">
+                <h3>Cropped Image</h3>
+                <img id="croppedImg" src="#" alt="Cropped Image Preview"/>
+                <div id="croppedFileInfo" class="file-info" style="display: none;"></div> <!-- Cropped File Info (Size & Dimensions) -->
+                <a id="downloadLink" class="download-btn" href="#" download="cropped-image" style="display: none;">Download</a>
+            </div>
+        </div>
+    </div>
+
   </div>
 
   <script>
-    let originalImage = new Image();
+    const imageInput = document.getElementById('imageInput');
+    const dropZone = document.getElementById('dropZone');
+    const selectedFileNameSpan = document.getElementById('selectedFileName');
+    const originalFileInfoDiv = document.getElementById('originalFileInfo');
+    const optionsSection = document.getElementById('optionsSection');
+    const aspectRatioSelect = document.getElementById('aspectRatioSelect');
+    const formatSelect = document.getElementById('formatSelect');
+    const qualitySlider = document.getElementById('quality');
+    const qualityValueSpan = document.getElementById('qualityValue');
+    const qualityNoteSpan = document.getElementById('qualityNote');
+    const cropBtn = document.getElementById('cropBtn');
+    const messageDiv = document.getElementById('message');
+    const previewSection = document.querySelector('.preview-section'); // Contains the original image preview with overlay
+    const originalPreviewContainer = document.getElementById('originalPreviewContainer');
+    const originalImg = document.getElementById('originalImg');
+    const cropOverlay = document.getElementById('cropOverlay');
+    const cropOverlayBox = document.querySelector('.crop-overlay-box');
 
-    document.getElementById('upload').addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    const croppedResultSection = document.getElementById('croppedResultSection'); // Contains the cropped image result
+    const croppedPreviewDiv = document.getElementById('croppedPreview');
+    const croppedImg = document.getElementById('croppedImg');
+    const croppedFileInfoDiv = document.getElementById('croppedFileInfo');
+    const downloadLink = document.getElementById('downloadLink');
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        originalImage.src = e.target.result;
-        originalImage.onload = () => resizeImage();
-      };
-      reader.readAsDataURL(file);
-    });
 
-    function resizeImage() {
-      const aspectValue = document.getElementById('aspectRatio').value;
-      const aspectRatio = eval(aspectValue);
+    let originalFile = null;
+    let originalImageElement = null; // Use an Image object for original dimensions and drawing
+    let originalObjectURL = null; // URL for the original image element src
 
-      const originalWidth = originalImage.width;
-      const originalHeight = originalImage.height;
+    let originalWidth = 0;
+    let originalHeight = 0;
+    let originalAspectRatio = 0;
 
-      let newWidth = originalWidth;
-      let newHeight = Math.round(newWidth / aspectRatio);
 
-      if (newHeight > originalHeight) {
-        newHeight = originalHeight;
-        newWidth = Math.round(newHeight * aspectRatio);
+    // --- Helper Functions ---
+
+    // Function to format bytes into a human-readable string (KB, MB)
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+     // Function to parse aspect ratio string like "16/9" or "1"
+     function parseAspectRatio(ratioString) {
+         if (ratioString === 'original') return originalAspectRatio; // Handle 'original' case
+         const parts = ratioString.split('/');
+         if (parts.length === 2) {
+             const num = parseFloat(parts[0]);
+             const den = parseFloat(parts[1]);
+             if (den === 0) return NaN; // Avoid division by zero
+             return num / den;
+         }
+         const singleValue = parseFloat(ratioString);
+         return isNaN(singleValue) ? originalAspectRatio : singleValue; // Default to original if invalid
+     }
+
+    // Function to clear previous previews, messages, and reset UI state
+    function clearAll() {
+      // Revoke existing URLs to free memory
+      if (originalObjectURL) {
+        URL.revokeObjectURL(originalObjectURL);
+        originalObjectURL = null;
+      }
+      if (resizedObjectURL) { // Renamed from compressedObjectURL
+        URL.revokeObjectURL(resizedObjectURL);
+        resizedObjectURL = null;
       }
 
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
+      // Reset internal state
+      originalFile = null;
+      originalImageElement = null;
+      originalWidth = 0;
+      originalHeight = 0;
+      originalAspectRatio = 0;
 
-      canvas.width = newWidth;
-      canvas.height = newHeight;
 
-      ctx.clearRect(0, 0, newWidth, newHeight);
-      ctx.drawImage(originalImage, 0, 0, newWidth, newHeight);
+      // Hide and reset UI elements
+      selectedFileNameSpan.textContent = '';
+      originalFileInfoDiv.style.display = 'none';
+      originalFileInfoDiv.textContent = '';
 
-      const downloadLink = document.getElementById('downloadLink');
-      downloadLink.href = canvas.toDataURL();
-      downloadLink.style.display = 'block';
-      downloadLink.textContent = 'Download Cropped Image';
+      // Reset options
+      aspectRatioSelect.value = 'original'; // Reset to original aspect ratio
+      qualitySlider.value = 90;
+      qualityValueSpan.textContent = 90;
+      qualityNoteSpan.style.display = 'none';
+
+
+      // Hide and reset original preview with overlay
+      originalPreviewContainer.style.display = 'none';
+      originalImg.src = '#';
+      originalImg.style.display = 'none';
+      cropOverlay.style.display = 'none';
+
+
+      // Hide and reset cropped results
+      croppedResultSection.style.display = 'none';
+      croppedPreviewDiv.style.display = 'none';
+      croppedImg.src = '#';
+      croppedImg.style.display = 'none';
+      croppedFileInfoDiv.style.display = 'none';
+      croppedFileInfoDiv.textContent = '';
+      downloadLink.href = '#';
+      downloadLink.style.display = 'none';
+
+
+      // Clear messages and hide sections if no file
+      messageDiv.textContent = '';
+      previewSection.style.display = 'none'; // Hide the section containing original preview and message
+      previewSection.classList.remove('loading', 'error', 'warning');
+      croppedResultSection.classList.remove('loading', 'error', 'warning');
+
+
+      optionsSection.style.display = 'none'; // Hide options section
+
+
+      // Reset file input and drop zone UI
+      imageInput.value = '';
+      dropZone.classList.remove('has-file', 'dragover');
+
+
+      // Ensure crop button is disabled until a file is ready
+      cropBtn.disabled = true;
+
+       // Remove the dynamically added "Original" option if it exists (optional, keeps select cleaner)
+       const originalOption = aspectRatioSelect.querySelector('option[value="original"]');
+       if (originalOption && aspectRatioSelect.options.length > 1) { // Don't remove if it's the only option left
+            originalOption.remove();
+            aspectRatioSelect.value = aspectRatioSelect.options[0].value; // Select first available option
+       }
     }
+
+     // Helper function to clear only the cropped results section
+    function clearCroppedResults() {
+         if (resizedObjectURL) { // Renamed from compressedObjectURL
+            URL.revokeObjectURL(resizedObjectURL);
+            resizedObjectURL = null;
+         }
+         croppedResultSection.style.display = 'none';
+         croppedPreviewDiv.style.display = 'none';
+         croppedImg.src = '#';
+         croppedImg.style.display = 'none';
+         croppedFileInfoDiv.style.display = 'none';
+         croppedFileInfoDiv.textContent = '';
+         downloadLink.href = '#';
+         downloadLink.style.display = 'none';
+
+         // Clear message related to previous result state (success/error)
+         // Keep loading message if conversion is ongoing
+         if (!previewSection.classList.contains('loading') && !croppedResultSection.classList.contains('loading')) {
+              messageDiv.textContent = '';
+         }
+
+
+         // Remove state classes related to results
+         croppedResultSection.classList.remove('error', 'warning');
+    }
+
+
+    // Function to calculate and update the crop overlay display
+    function updateCropOverlay() {
+        // Needs original image element and displayed image element to be available and loaded
+        if (!originalImageElement || !originalImg || originalImageElement.width === 0 || originalImageElement.height === 0 || originalImg.offsetWidth === 0 || originalImg.offsetHeight === 0) {
+            cropOverlay.style.display = 'none'; // Hide overlay if conditions not met
+            return;
+        }
+
+        const targetAspectRatio = parseAspectRatio(aspectRatioSelect.value);
+
+        // --- Calculate the desired crop box dimensions on the ORIGINAL image ---
+        // This is the largest box with the target aspect ratio that fits inside the original image
+        let cropWidthOnOriginal, cropHeightOnOriginal;
+
+        if (originalAspectRatio > targetAspectRatio) {
+            // Original image is wider than the target aspect ratio (or equal height)
+            // The crop box will be limited by the original image height
+            cropHeightOnOriginal = originalHeight;
+            cropWidthOnOriginal = originalHeight * targetAspectRatio;
+        } else {
+            // Original image is taller or has the same aspect ratio as the target
+            // The crop box will be limited by the original image width
+            cropWidthOnOriginal = originalWidth;
+            cropHeightOnOriginal = originalWidth / targetAspectRatio;
+        }
+
+        // Ensure calculated crop dimensions do not exceed original dimensions (should naturally happen)
+        cropWidthOnOriginal = Math.min(cropWidthOnOriginal, originalWidth);
+        cropHeightOnOriginal = Math.min(cropHeightOnOriginal, originalHeight);
+
+
+        // --- Calculate the dimensions and position of the crop box on the DISPLAYED image ---
+        // Use the rendered dimensions of the HTML <img> to position and size the overlay correctly
+        const displayedWidth = originalImg.offsetWidth;
+        const displayedHeight = originalImg.offsetHeight;
+
+        const scaleX = displayedWidth / originalWidth;
+        const scaleY = displayedHeight / originalHeight;
+        // Note: if object-fit: contain is used, scaleX and scaleY should be the same,
+        // but calculating based on both displayed and original ensures accuracy.
+
+
+        // Calculate the dimensions of the crop box on the DISPLAYED image
+        const cropWidthOnDisplayed = cropWidthOnOriginal * scaleX;
+        const cropHeightOnDisplayed = cropHeightOnOriginal * scaleY;
+
+        // Set the size of the visible crop box element
+        cropOverlayBox.style.width = `${cropWidthOnDisplayed}px`;
+        cropOverlayBox.style.height = `${cropHeightOnDisplayed}px`;
+
+
+        // Position the overlay container to precisely cover the displayed image area
+        // Need to get the position of the *image* relative to its *container*
+        const imgRect = originalImg.getBoundingClientRect();
+        const containerRect = originalPreviewContainer.getBoundingClientRect();
+
+        // Calculate position relative to container's top-left padding edge
+        const overlayLeft = imgRect.left - containerRect.left;
+        const overlayTop = imgRect.top - containerRect.top;
+
+
+        cropOverlay.style.left = `${overlayLeft}px`;
+        cropOverlay.style.top = `${overlayTop}px`;
+        cropOverlay.style.width = `${displayedWidth}px`;
+        cropOverlay.style.height = `${displayedHeight}px`;
+
+
+        cropOverlay.style.display = 'block'; // Show the overlay
+
+
+        // Optional: Add a throttle/debounce for the window resize event listener
+        // to prevent updateCropOverlay from firing too rapidly.
+    }
+
+
+    // Function to handle a selected/dropped file
+    function handleFile(file) {
+        clearAll(); // Clear previous state
+
+        if (!file) {
+            messageDiv.textContent = "No file selected.";
+            previewSection.style.display = 'block';
+            previewSection.classList.add('error');
+            return;
+        }
+
+        // Basic validation for image type
+        if (!file.type.startsWith('image/')) {
+            messageDiv.textContent = "Please select an image file (JPG, PNG, GIF, etc.).";
+            previewSection.style.display = 'block';
+            previewSection.classList.add('error');
+            clearAll(); // Ensure full reset if wrong file type
+            return;
+        }
+
+        originalFile = file;
+        selectedFileNameSpan.textContent = `Selected: ${file.name}`;
+        dropZone.classList.add('has-file'); // Indicate a file is loaded
+
+
+        // Read file to get Data URL for preview and dimension reading
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            originalObjectURL = event.target.result;
+
+            // 1. Set the HTML preview image source immediately
+            // This allows the image to start loading in the DOM
+            originalImg.src = originalObjectURL;
+            originalImg.style.display = 'block'; // Make it visible
+            originalPreviewContainer.style.display = 'flex'; // Show the container using flex for centering
+
+            // Use originalImg's load event to trigger overlay update
+            originalImg.onload = () => {
+                 // 2. Load the same data into an internal Image object for dimensions and drawing
+                 // We do this *after* originalImg loads to ensure originalImg's dimensions are available if needed,
+                 // although originalImageElement will get the intrinsic dimensions.
+                originalImageElement = new Image();
+                originalImageElement.onload = () => {
+                    originalWidth = originalImageElement.width;
+                    originalHeight = originalImageElement.height;
+                    originalAspectRatio = originalWidth / originalHeight;
+
+                    // Display original dimensions and size
+                    originalFileInfoDiv.textContent = `Original: ${originalWidth}x${originalHeight}, ${formatBytes(originalFile.size)}`;
+                    originalFileInfoDiv.style.display = 'block';
+
+                    // Update the "Original" option text with actual dimensions
+                    const originalOption = aspectRatioSelect.querySelector('option[value="original"]');
+                    if (originalOption) {
+                       originalOption.textContent = `Original (${originalWidth}x${originalHeight})`;
+                    } else {
+                        // Should not happen if HTML is correct, but fallback
+                        const newOriginalOption = document.createElement('option');
+                        newOriginalOption.value = 'original';
+                        newOriginalOption.textContent = `Original (${originalWidth}x${originalHeight})`;
+                         aspectRatioSelect.insertBefore(newOriginalOption, aspectRatioSelect.firstChild);
+                    }
+                    aspectRatioSelect.value = 'original'; // Select original aspect ratio by default
+
+
+                    // Update crop overlay after both Image objects/elements are loaded
+                    // and originalImg is rendered in the DOM
+                    updateCropOverlay();
+
+
+                    previewSection.style.display = 'block'; // Ensure preview section is shown
+
+                    messageDiv.textContent = 'Image loaded. Select crop area and options.';
+                    previewSection.classList.remove('error');
+
+                    // Show options section and enable crop button
+                    optionsSection.style.display = 'flex';
+                    cropBtn.disabled = false;
+
+                };
+                 originalImageElement.onerror = function() {
+                    messageDiv.textContent = "Error loading image data for processing.";
+                    previewSection.style.display = 'block';
+                    previewSection.classList.add('error');
+                    clearAll();
+                };
+                // Load the data into the internal Image object
+                originalImageElement.src = originalObjectURL;
+
+            }; // End of originalImg.onload
+
+            originalImg.onerror = function() {
+                 messageDiv.textContent = "Error displaying image preview.";
+                 previewSection.style.display = 'block';
+                 previewSection.classList.add('error');
+                 clearAll();
+            }
+
+
+        }; // End of reader.onload
+
+        reader.onerror = function() {
+             messageDiv.textContent = "Error reading image file.";
+             previewSection.style.display = 'block';
+             previewSection.classList.add('error');
+             clearAll();
+        }
+        reader.readAsDataURL(originalFile);
+
+
+    }
+
+    // --- Event Listeners ---
+
+    // Handle file selection via click
+    imageInput.addEventListener('change', function(e) {
+      handleFile(e.target.files[0]);
+    });
+
+    // Handle drag and drop events on the drop zone
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+        messageDiv.textContent = 'Drop your image here...';
+        previewSection.style.display = 'block'; // Show message area
+        previewSection.classList.remove('error', 'warning');
+        croppedResultSection.style.display = 'none'; // Hide results during drag
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+        // Restore message if a file was already selected
+        if (originalFile) {
+             messageDiv.textContent = 'Image loaded. Select crop area and options.';
+        } else {
+            messageDiv.textContent = ''; // Clear message if no file
+             previewSection.style.display = 'none'; // Hide section if no file
+        }
+         if (resizedObjectURL) croppedResultSection.style.display = 'flex'; // Show results again if they exist (use flex)
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        handleFile(file);
+    });
+
+    // Update crop overlay when aspect ratio changes
+    aspectRatioSelect.addEventListener('change', function() {
+        updateCropOverlay();
+         // Clear results if options change after cropping
+         if (resizedObjectURL) {
+             clearCroppedResults();
+             messageDiv.textContent = 'Options changed. Crop again.';
+         }
+    });
+
+
+    // Update quality value display when slider moves
+    qualitySlider.addEventListener('input', function() {
+        qualityValueSpan.textContent = this.value;
+    });
+
+    // Update quality note based on selected format
+    formatSelect.addEventListener('change', function() {
+        const format = this.value;
+        if (format === 'png') {
+            qualityNoteSpan.textContent = 'Note: Quality setting is ignored for PNG format as it is lossless.';
+            qualityNoteSpan.style.display = 'block';
+            previewSection.classList.add('warning'); // Add warning class to preview section
+        } else {
+            qualityNoteSpan.textContent = '';
+            qualityNoteSpan.style.display = 'none';
+            previewSection.classList.remove('warning');
+        }
+         // Clear results if options change after cropping
+         if (resizedObjectURL) {
+             clearCroppedResults();
+             messageDiv.textContent = 'Options changed. Crop again.';
+         }
+    });
+
+    // Handle window resize to update overlay position/size
+    // Added a simple debounce to avoid excessive calls
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(updateCropOverlay, 100); // Wait 100ms after resizing stops
+    });
+
+
+    // Handle crop button click
+    cropBtn.addEventListener('click', function() {
+      if (!originalFile || !originalImageElement || originalWidth === 0 || originalHeight === 0) {
+        messageDiv.textContent = "Please upload a valid image first.";
+        previewSection.style.display = 'block';
+        previewSection.classList.add('error');
+        return;
+      }
+
+       // Clear previous cropped results
+      clearCroppedResults();
+
+      const targetAspectRatio = parseAspectRatio(aspectRatioSelect.value);
+
+      // Validate target aspect ratio
+      if (isNaN(targetAspectRatio) || targetAspectRatio <= 0) {
+          messageDiv.textContent = "Invalid aspect ratio selected.";
+          croppedResultSection.classList.add('error');
+          croppedResultSection.style.display = 'block';
+          return;
+      }
+
+
+      const format = formatSelect.value;
+      const quality = parseInt(qualitySlider.value) / 100; // Get quality as 0-1
+
+
+      // --- Calculate Crop Area on Original Image ---
+      let sWidth, sHeight, sx, sy; // Source rectangle on original image
+
+      if (originalAspectRatio > targetAspectRatio) {
+          // Original image is wider than the target aspect ratio
+          // The crop box will have the full original height
+          sHeight = originalHeight;
+          sWidth = originalHeight * targetAspectRatio;
+      } else {
+          // Original image is taller or has the same aspect ratio as the target
+          // The crop box will have the full original width
+          sWidth = originalWidth;
+          sHeight = originalWidth / targetAspectRatio;
+      }
+
+      // Calculate position to center the crop box
+      sx = (originalWidth - sWidth) / 2;
+      sy = (originalHeight - sHeight) / 2;
+
+      // Ensure coordinates are not negative or exceed bounds due to potential floating point issues
+      sx = Math.max(0, sx);
+      sy = Math.max(0, sy);
+      sWidth = Math.min(sWidth, originalWidth - sx);
+      sHeight = Math.min(sHeight, originalHeight - sy);
+
+      // Ensure positive dimensions
+       if (sWidth <= 0 || sHeight <= 0) {
+            messageDiv.textContent = "Calculated crop dimensions are invalid. Please try a different aspect ratio.";
+            croppedResultSection.classList.add('error');
+            croppedResultSection.style.display = 'block';
+            console.error("Calculated zero or negative crop dimensions:", {sWidth, sHeight, sx, sy, originalWidth, originalHeight, originalAspectRatio, targetAspectRatio});
+             return;
+       }
+
+
+      // --- Perform Cropping on a New Canvas ---
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Set the new canvas dimensions to the calculated crop dimensions
+      // Use Math.round() for canvas dimensions to avoid sub-pixel issues
+      const canvasWidth = Math.round(sWidth);
+      const canvasHeight = Math.round(sHeight);
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+
+      // Show loading state
+      messageDiv.textContent = `Cropping image to ${canvasWidth}x${canvasHeight} and saving as ${format.toUpperCase()}...`;
+      cropBtn.disabled = true;
+      optionsSection.classList.add('disabled');
+      previewSection.classList.add('loading'); // Add loading class to the message section area
+      croppedResultSection.classList.remove('error', 'warning');
+
+
+      try {
+          // Draw the *specific region* from the original image onto the *entire* new canvas
+          // Note: The source dimensions sWidth, sHeight should be used for the destination
+          // dimensions dWidth, dHeight when you want to draw the source region *exactly*
+          // onto the target canvas size.
+          ctx.drawImage(
+              originalImageElement, // Source image
+              sx, sy, sWidth, sHeight, // Source rectangle (the calculated crop area on the original)
+              0, 0, canvasWidth, canvasHeight   // Destination rectangle (draw onto the full new canvas size)
+          );
+
+
+          const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/' + format;
+
+          canvas.toBlob(function(blob) {
+            // Remove loading state
+            messageDiv.textContent = '';
+            cropBtn.disabled = false;
+            optionsSection.classList.remove('disabled');
+            previewSection.classList.remove('loading'); // Remove loading class from message section
+
+
+            if (blob) {
+              resizedObjectURL = URL.createObjectURL(blob); // Use resizedObjectURL
+
+              // Display cropped preview
+              croppedImg.onload = () => {
+                 // URL.revokeObjectURL can be called here if you want to release memory immediately
+                 // after the img element has loaded the data.
+              };
+              croppedImg.src = resizedObjectURL;
+              croppedImg.style.display = 'block';
+              croppedPreviewDiv.style.display = 'block'; // Show the cropped preview div
+              croppedResultSection.style.display = 'flex'; // Show the results section (use flex for layout)
+
+
+              // Display cropped size and dimensions
+              croppedFileInfoDiv.innerHTML = `Cropped: ${canvasWidth}x${canvasHeight}, ${formatBytes(blob.size)}`; // Use canvas dimensions
+              croppedFileInfoDiv.style.display = 'block';
+
+
+              // Calculate and display size comparison
+              const originalSizeBytes = originalFile.size;
+              const croppedSizeBytes = blob.size;
+              const sizeDiff = originalSizeBytes - croppedSizeBytes;
+              const percentageDiff = originalSizeBytes > 0 ? (sizeDiff / originalSizeBytes) * 100 : 0;
+
+              const comparisonText = originalSizeBytes > 0
+                ? `${sizeDiff >= 0 ? 'Reduced by' : 'Increased by'}: ${formatBytes(Math.abs(sizeDiff))} (${percentageDiff.toFixed(2)}%)`
+                : '';
+
+              const comparisonSpan = document.createElement('span');
+              comparisonSpan.className = 'size-comparison';
+              if (sizeDiff < 0) comparisonSpan.classList.add('increase'); // Red if size increased
+              comparisonSpan.textContent = comparisonText;
+              croppedFileInfoDiv.appendChild(document.createElement('br'));
+              croppedFileInfoDiv.appendChild(comparisonSpan);
+
+
+              // Set up download link
+              const originalFileName = originalFile.name.split('.').slice(0, -1).join('.') || 'image';
+              downloadLink.href = resizedObjectURL; // Use resizedObjectURL
+              downloadLink.download = `${originalFileName}-cropped-${canvasWidth}x${canvasHeight}.${format}`; // Descriptive filename
+              downloadLink.textContent = `Download ${format.toUpperCase()} (${formatBytes(blob.size)})`; // Dynamic button text with size
+              downloadLink.style.display = 'inline-block';
+
+              messageDiv.textContent = 'Cropping successful!';
+              previewSection.classList.remove('error', 'warning'); // Remove from preview section
+              croppedResultSection.classList.remove('error', 'warning'); // Remove from results section
+
+
+            } else {
+              messageDiv.textContent = "Error cropping image. Could not create blob.";
+              croppedResultSection.classList.add('error'); // Add error class to results section
+              console.error("Canvas toBlob failed.");
+            }
+          }, mimeType, quality); // Pass mime type and quality
+
+      } catch (e) {
+           messageDiv.textContent = `An error occurred during cropping: ${e.message}`;
+           croppedResultSection.classList.add('error'); // Add error class to results section
+           cropBtn.disabled = false;
+           optionsSection.classList.remove('disabled');
+           previewSection.classList.remove('loading'); // Remove loading class from message section
+           console.error("Error during canvas operations:", e);
+      }
+
+
+    });
+
+     // --- Initial Setup ---
+    // Initial state: Hide options and preview section, disable button
+    optionsSection.style.display = 'none';
+    previewSection.style.display = 'none'; // Hides original image preview and message area
+    croppedResultSection.style.display = 'none'; // Hides the cropped result section
+    cropBtn.disabled = true;
+
+    // Initial state for quality note based on default format (PNG is default in HTML)
+    if(formatSelect.value === 'png') {
+         qualityNoteSpan.textContent = 'Note: Quality setting is ignored for PNG format as it is lossless.';
+         qualityNoteSpan.style.display = 'block';
+         previewSection.classList.add('warning'); // Add warning class initially if needed
+    }
+
+
   </script>
 </body>
 </html>
-  
-  
