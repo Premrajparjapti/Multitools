@@ -1,127 +1,560 @@
-  
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Image to Text Tool</title>
+  <title>Image to Text (OCR)</title>
+  <!-- Include Tesseract.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js"></script>
+  <!-- Note: Using version 5.0.0. Check the latest version on their CDN. -->
+
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f8ff;
-      color: #000;
+    /* CSS Variables */
+    :root {
+      --primary-color: #0e7490; /* Teal Blue */
+      --primary-dark: #155e75;
+      --primary-light: #a7f3d0; /* Light Green-Blue */
+      --secondary-color: #3b82f6; /* Blue for copy */
+      --secondary-dark: #2563eb;
+      --text-color: #374151; /* Darker grey */
+      --label-color: #4b5563;
+      --background-color: #f0f9ff; /* Very light blue */
+      --surface-color: #ffffff; /* White */
+      --border-color: #d1d5db; /* Light grey */
+      --error-color: #dc2626; /* Red */
+      --warning-color: #f59e0b; /* Orange */
+    }
+
+    /* Basic Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+
     .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 1rem;
+      background-color: var(--surface-color);
+      padding: 2.5rem;
+      border-radius: 16px;
+      max-width: 700px; /* Slightly wider container for text output */
+      width: 100%;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
     }
 
     h1 {
       text-align: center;
-      color: #007bff;
+      color: var(--primary-dark);
+      margin-bottom: 1rem;
+      font-size: 2.2rem;
+      font-weight: 700;
     }
 
-    .upload-section {
-      background: #ffffff;
-      border: 2px dashed #007bff;
-      padding: 2rem;
-      text-align: center;
-      border-radius: 10px;
+    .section {
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background-color: var(--surface-color);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
     }
 
-    input[type="file"] {
-      display: none;
+     .section.disabled {
+        opacity: 0.7;
+        pointer-events: none; /* Disable interactions */
+     }
+
+
+    .section h2 {
+        color: var(--primary-color);
+        font-size: 1.4rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--background-color);
     }
 
-    label[for="imageInput"] {
-      background-color: #007bff;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      cursor: pointer;
+    label {
+        display: block;
+        margin-bottom: 0.6rem;
+        font-weight: 600;
+        color: var(--label-color);
     }
 
-    #output {
+    /* --- Drop Zone Styling --- */
+    .drop-zone {
+        border: 2px dashed var(--primary-light);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        position: relative;
+    }
+
+    .drop-zone:hover {
+        background-color: #e0f9ff; /* Light hover effect */
+        border-color: var(--primary-color);
+    }
+
+    .drop-zone.dragover {
+        background-color: #bae6fd; /* Slightly darker */
+        border-color: var(--primary-dark);
+    }
+
+    .drop-zone input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 10;
+    }
+
+    .drop-zone .upload-icon {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        margin-bottom: 0.8rem;
+    }
+
+    .drop-zone .upload-text {
+        font-size: 1.1rem;
+        color: var(--label-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .drop-zone .file-name {
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin-top: 0.5rem;
+        word-break: break-all;
+    }
+
+     .file-info {
+        font-size: 0.9rem;
+        color: var(--label-color);
+        margin-top: 0.5rem;
+        text-align: center;
+     }
+
+
+    /* --- Results Area --- */
+    .result-section {
+       /* Already styled by .section */
+    }
+
+    #message {
+        text-align: center;
+        min-height: 1.5em;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .loading #message {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .error #message {
+        color: var(--error-color);
+        font-weight: 500;
+    }
+    .warning #message {
+        color: var(--warning-color);
+        font-weight: 500;
+    }
+
+     /* Output Text Area */
+     #output {
+         width: 100%;
+         min-height: 200px; /* Give it a decent default size */
+         padding: 1rem;
+         border: 1px solid var(--border-color);
+         border-radius: 8px;
+         background-color: var(--background-color);
+         font-size: 1rem;
+         line-height: 1.5;
+         color: var(--text-color);
+         resize: vertical; /* Allow vertical resize */
+         font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; /* Monospace font for text output */
+         white-space: pre-wrap; /* Respect line breaks */
+         word-wrap: break-word; /* Break long words */
+     }
+
+      /* Copy Button */
+     .copy-btn {
+      /* Using general button style, but can override if needed */
+      /* width: auto; */ /* Make it fit content */
+      /* display: inline-block; */ /* Make it inline */
       margin-top: 1rem;
-      background: #e6f0ff;
-      padding: 1rem;
-      border-radius: 5px;
-      white-space: pre-wrap;
-    }
-
-    button.copy-btn {
-      margin-top: 0.5rem;
-      background-color: #007bff;
+      padding: 0.8rem 1.8rem;
+      background-color: var(--secondary-color);
       color: white;
       border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
       cursor: pointer;
+      transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+      box-shadow: 0 4px 8px rgba(59,130,246,0.25);
     }
 
+    .copy-btn:hover:not(:disabled) {
+      background-color: var(--secondary-dark);
+    }
+
+    .copy-btn:disabled {
+        background-color: var(--secondary-color); /* Keep primary color */
+        opacity: 0.5; /* Less opacity when disabled */
+        cursor: not-allowed;
+    }
+
+
+    /* Responsive adjustments */
     @media (max-width: 600px) {
-      .container {
-        padding: 0.5rem;
-      }
-
-      .upload-section {
-        padding: 1rem;
-      }
+       .container {
+          padding: 1.5rem;
+       }
+       .section {
+           padding: 1rem;
+       }
     }
+
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Image to Text</h1>
-    <div class="upload-section">
-      <label for="imageInput">Upload Image</label>
-      <input type="file" id="imageInput" accept="image/*" />
+    <h1>📝 Image to Text  (OCR)</h1> <!-- Added an emoji -->
+
+    <div class="section" id="uploadSection">
+      <h2>Upload Image</h2>
+      <!-- Drop Zone -->
+      <div id="dropZone" class="drop-zone">
+        <input type="file" id="imageInput" accept="image/*" />
+        <div class="upload-icon">⬆️</div> <!-- Placeholder icon -->
+        <p class="upload-text">Drag & drop an image here, or click to select file</p>
+        <p id="selectedFileName" class="file-name"></p>
+      </div>
     </div>
-    <div id="output" style="display:none;"></div>
-    <button class="copy-btn" style="display:none;" onclick="copyText()">Copy Text</button>
+
+    <div class="section result-section" id="resultSection" style="display: none;">
+        <h2>Recognized Text</h2>
+        <div id="message"></div> <!-- For messages like errors or loading -->
+
+        <!-- Image Preview (Optional but helpful) -->
+        <!-- <div id="imagePreviewContainer" style="display: none; text-align: center; margin-bottom: 1rem;">
+            <img id="imagePreview" src="#" alt="Image Preview" style="max-width: 100%; max-height: 200px; border: 1px solid var(--border-color); border-radius: 8px;"/>
+        </div> -->
+
+        <textarea id="output" readonly placeholder="Recognized text will appear here..."></textarea>
+
+        <button id="copyBtn" class="copy-btn" style="display: none;">Copy Text</button>
+    </div>
+
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.4/dist/tesseract.min.js"></script>
   <script>
     const imageInput = document.getElementById('imageInput');
-    const output = document.getElementById('output');
-    const copyBtn = document.querySelector('.copy-btn');
+    const dropZone = document.getElementById('dropZone');
+    const selectedFileNameSpan = document.getElementById('selectedFileName');
+    const uploadSection = document.getElementById('uploadSection');
 
-    imageInput.addEventListener('change', async () => {
-      if (imageInput.files.length === 0) return;
+    const resultSection = document.getElementById('resultSection');
+    const messageDiv = document.getElementById('message');
+    // const imagePreviewContainer = document.getElementById('imagePreviewContainer'); // Optional
+    // const imagePreview = document.getElementById('imagePreview'); // Optional
+    const outputTextarea = document.getElementById('output'); // Renamed from 'output' div to 'outputTextarea' textarea
+    const copyBtn = document.getElementById('copyBtn'); // Renamed from '.copy-btn' query selector
 
-      const file = imageInput.files[0];
-      const reader = new FileReader();
 
-      reader.onload = async () => {
-        output.style.display = 'block';
-        output.textContent = 'Processing...';
+    let originalFile = null;
+    let currentWorker = null; // To keep track of the Tesseract worker
+
+
+    // --- Helper Functions ---
+
+    // Function to clear previous results and reset UI state (except file input)
+    function clearResults() {
+        // Hide result elements
+        // resultSection.style.display = 'none'; // Keep visible for messages and textarea
+        messageDiv.textContent = '';
+        // if (imagePreviewContainer) imagePreviewContainer.style.display = 'none'; // Optional
+        // if (imagePreview) imagePreview.src = '#'; // Optional
+        outputTextarea.value = ''; // Clear textarea content
+        copyBtn.style.display = 'none'; // Hide copy button initially
+        // copyBtn.disabled = true; // Optional: Disable instead of hide
+
+        resultSection.classList.remove('loading', 'error', 'warning'); // Remove state classes
+
+        // Re-enable button/inputs if a file is still loaded (not really inputs here, just drop zone)
+        uploadSection.classList.remove('disabled'); // Re-enable upload zone
+    }
+
+
+    // Function to reset the entire tool UI and state
+    async function resetTool() {
+        clearResults(); // Clear previous results and state
+
+        // Terminate the worker if it's active
+        if (currentWorker) {
+            messageDiv.textContent = 'Terminating previous process...';
+            resultSection.style.display = 'block';
+             resultSection.classList.add('loading');
+             uploadSection.classList.add('disabled'); // Disable upload during termination
+            await currentWorker.terminate();
+            currentWorker = null;
+            messageDiv.textContent = 'Previous process terminated.';
+             resultSection.classList.remove('loading', 'error');
+             uploadSection.classList.remove('disabled');
+        }
+
+
+        // Reset file-specific state
+        originalFile = null;
+
+        // Reset file upload UI
+        imageInput.value = ''; // Clear file input value
+        selectedFileNameSpan.textContent = '';
+        dropZone.classList.remove('has-file', 'dragover');
+
+        // Hide result section initially
+        resultSection.style.display = 'none';
+
+        // Ensure upload section is enabled
+         uploadSection.classList.remove('disabled');
+
+         messageDiv.textContent = ''; // Clear any residual message
+    }
+
+
+    // Function to handle a selected/dropped image file
+    function handleFile(file) {
+        // Terminate any ongoing process first
+        resetTool().then(() => {
+             // Proceed after reset is complete
+             if (!file) {
+                messageDiv.textContent = "No file selected.";
+                resultSection.style.display = 'block';
+                resultSection.classList.add('error');
+                return;
+            }
+
+            // Validate file type (basic check)
+            if (!file.type.startsWith('image/')) {
+                messageDiv.textContent = "Please select an image file (JPG, PNG, etc.).";
+                resultSection.style.display = 'block';
+                resultSection.classList.add('error');
+                return; // Don't reset tool fully, keep message
+            }
+
+            originalFile = file;
+            selectedFileNameSpan.textContent = `Selected: ${file.name}`;
+            dropZone.classList.add('has-file');
+
+            // Show the result section to display messages and output area
+            resultSection.style.display = 'block';
+
+            // Display initial message
+            messageDiv.textContent = `Image selected. Click 'Process Image' or it might start automatically...`; // Update message flow if using auto-process
+
+            // Optional: Display image preview
+            // const reader = new FileReader();
+            // reader.onload = (e) => {
+            //     if (imagePreview) imagePreview.src = e.target.result;
+            //     if (imagePreviewContainer) imagePreviewContainer.style.display = 'block';
+            // };
+            // reader.readAsDataURL(file);
+
+
+             // AUTO-PROCESS: Uncomment the line below to start processing immediately after file select
+             // processImageForText();
+
+             // MANUAL-PROCESS (Original code flow): Add a "Process" button here if you don't auto-process.
+             // For this enhanced UI, auto-processing on file select feels more modern.
+             // Let's switch to auto-processing. The message above indicates this.
+              messageDiv.textContent = `Processing image for text...`;
+              processImageForText();
+
+
+        }); // End of resetTool().then(...)
+
+    }
+
+
+    // Function to process the loaded image for text
+    async function processImageForText() {
+        if (!originalFile) {
+            messageDiv.textContent = "No image file loaded.";
+             resultSection.style.display = 'block';
+            resultSection.classList.add('error');
+            return;
+        }
+
+        // Clear previous result text and hide copy button
+        outputTextarea.value = '';
+        copyBtn.style.display = 'none'; // Hide copy button
+        // copyBtn.disabled = true; // Disable copy button
+
+
+        // Show loading state
+        messageDiv.textContent = 'Processing image for text... This may take a moment.';
+        resultSection.classList.add('loading');
+        resultSection.classList.remove('error', 'warning');
+        uploadSection.classList.add('disabled'); // Disable upload while processing
+
 
         try {
-          const result = await Tesseract.recognize(reader.result, 'eng');
-          output.textContent = result.data.text;
-          copyBtn.style.display = 'inline-block';
-        } catch (err) {
-          output.textContent = 'Error processing image.';
-          console.error(err);
-        }
-      };
+            // Create a new Tesseract worker
+            currentWorker = await Tesseract.createWorker('eng'); // 'eng' is the language code for English
 
-      reader.readAsDataURL(file);
+            // Listen for progress events (optional but good for large images)
+            currentWorker.setProgress((p) => {
+              // p.status and p.progress are available
+              let status = p.status.replace('_', ' '); // Make status more readable
+              messageDiv.textContent = `Status: ${status}... ${(p.progress * 100).toFixed(0)}%`;
+            });
+
+
+            // Recognize text from the file
+            // Pass the File object directly
+            const result = await currentWorker.recognize(originalFile);
+
+            // Display the recognized text
+            outputTextarea.value = result.data.text || 'No text recognized.'; // Use value for textarea
+             messageDiv.textContent = 'Processing complete.'; // Final success message
+
+
+        } catch (err) {
+            // Handle errors during OCR
+            outputTextarea.value = ''; // Clear output on error
+            messageDiv.textContent = 'Error processing image for text. Please try another image.';
+            resultSection.classList.add('error');
+            console.error('OCR Error:', err);
+
+        } finally {
+             // Clean up loading state regardless of success or failure
+             resultSection.classList.remove('loading');
+             uploadSection.classList.remove('disabled'); // Re-enable upload
+
+              // Terminate the worker to free up resources
+              if (currentWorker) {
+                   // console.log('Terminating worker...');
+                   await currentWorker.terminate();
+                   currentWorker = null;
+                   // console.log('Worker terminated.');
+               }
+
+            // Show/enable copy button only if there is text
+             if (outputTextarea.value && outputTextarea.value !== 'No text recognized.') {
+                 copyBtn.style.display = 'inline-block'; // Show copy button
+                 // copyBtn.disabled = false; // Enable copy button
+             } else {
+                  // If no text found, maybe set a specific message?
+                   if (messageDiv.textContent === 'Processing complete.') { // Avoid overwriting error message
+                        messageDiv.textContent = 'Processing complete. No text found.';
+                   }
+             }
+        }
+    }
+
+
+    // Function to copy text to clipboard
+    function copyText() {
+      const textToCopy = outputTextarea.value; // Use value for textarea
+
+      // Use the Clipboard API (more modern)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy)
+          .then(() => {
+            // Optional: Provide visual feedback like changing button text temporarily
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => {
+              copyBtn.textContent = originalText;
+            }, 2000); // Change back after 2 seconds
+          })
+          .catch(err => {
+            console.error('Failed to copy text: ', err);
+            alert('Failed to copy text. Please copy it manually.'); // Fallback alert
+          });
+      } else {
+        // Fallback for browsers that don't support Clipboard API
+        // This method is less user-friendly as it involves selecting the text
+        outputTextarea.select(); // Select the text in the textarea
+        try {
+            document.execCommand('copy'); // Deprecated, but still works in some browsers
+            alert('Text copied to clipboard!');
+        } catch (err) {
+             console.error('Failed to copy text using execCommand: ', err);
+             alert('Failed to copy text. Please copy it manually.');
+        }
+      }
+    }
+
+
+    // --- Event Listeners ---
+
+    // Handle file selection via click
+    imageInput.addEventListener('change', function(e) {
+      handleFile(e.target.files[0]);
     });
 
-    function copyText() {
-      const text = output.textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Text copied to clipboard!');
-      });
-    }
+    // Handle drag and drop events on the drop zone
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+        // Message during dragover
+        messageDiv.textContent = 'Drop the image file here...';
+        resultSection.style.display = 'block'; // Ensure message area is visible
+        resultSection.classList.remove('error', 'warning'); // Clear previous states
+        // Don't add 'loading' class here unless processing is ongoing
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+        // Restore message if a file is loaded, otherwise clear message area
+        if (originalFile) {
+            // If processing, the message is already set by Tesseract progress
+             if (!resultSection.classList.contains('loading')) {
+                 messageDiv.textContent = `Image selected. Ready to process.`; // Or similar
+             }
+        } else {
+            messageDiv.textContent = '';
+            resultSection.style.display = 'none'; // Hide result section if no file and no message
+        }
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        handleFile(file); // Call handleFile with the dropped file
+    });
+
+    // Copy button click
+    copyBtn.addEventListener('click', copyText);
+
+
+    // --- Initial Setup ---
+    resetTool(); // Initialize the tool state and UI
+
   </script>
 </body>
 </html>
-  
-  
