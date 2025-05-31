@@ -1,120 +1,949 @@
-  
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Image Resizer Tool</title>
+  <title>Advanced Image Resizer</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #e6f0ff;
-      color: #003366;
+    /* CSS Variables for easy theme changes */
+    :root {
+      --primary-color: #0d9488; /* Teal */
+      --primary-dark: #0f766e;
+      --primary-light: #99f6e4;
+      --secondary-color: #3b82f6; /* Blue for download */
+      --secondary-dark: #2563eb;
+      --text-color: #374151; /* Darker grey for main text */
+      --label-color: #4b5563; /* Slightly lighter grey for labels */
+      --background-color: #f0fdfa; /* Very light teal background */
+      --surface-color: #ffffff; /* White for cards/containers */
+      --border-color: #d1d5db; /* Light grey border */
+      --error-color: #dc2626; /* Red for errors */
+      --warning-color: #f59e0b; /* Orange for warnings/notes */
+    }
+
+    /* Basic Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+
     .container {
+      background-color: var(--surface-color);
+      padding: 2.5rem;
+      border-radius: 16px;
       max-width: 600px;
-      margin: 2rem auto;
-      padding: 1rem;
-      background-color: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 100%;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
     }
 
     h1 {
       text-align: center;
-      color: #007bff;
+      color: var(--primary-dark);
+      margin-bottom: 1rem;
+      font-size: 2.2rem;
+      font-weight: 700;
     }
 
-    input[type="file"], input[type="number"] {
-      display: block;
+    .section {
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background-color: var(--surface-color);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+     .section.disabled {
+        opacity: 0.7;
+        pointer-events: none; /* Disable interactions */
+     }
+
+
+    .section h2 {
+        color: var(--primary-color);
+        font-size: 1.4rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--background-color);
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.6rem;
+        font-weight: 600;
+        color: var(--label-color);
+    }
+
+    /* --- Drop Zone Styling --- */
+    .drop-zone {
+        border: 2px dashed var(--primary-light);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        position: relative;
+    }
+
+    .drop-zone:hover {
+        background-color: #e0f2f7; /* Light blue-green hover */
+        border-color: var(--primary-color);
+    }
+
+    .drop-zone.dragover {
+        background-color: #bae6fd; /* Slightly darker */
+        border-color: var(--primary-dark);
+    }
+
+    .drop-zone input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 10;
+    }
+
+    .drop-zone .upload-icon {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        margin-bottom: 0.8rem;
+    }
+
+    .drop-zone .upload-text {
+        font-size: 1.1rem;
+        color: var(--label-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .drop-zone .file-name {
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin-top: 0.5rem;
+        word-break: break-all;
+    }
+
+     .file-info {
+        font-size: 0.9rem;
+        color: var(--label-color);
+        margin-top: 0.5rem;
+        text-align: center;
+     }
+
+
+    /* --- Form Elements --- */
+    select, input[type="number"] {
       width: 100%;
-      margin: 1rem 0;
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 1rem;
+      color: var(--text-color);
+      background-color: var(--surface-color);
+      transition: border-color 0.2s ease-in-out;
+    }
+    select {
+        appearance: none;
+        background-image: url('data:image/svg+xml;utf8,<svg fill="%23374151" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 0.7em top 50%, 0 0;
+        background-size: 0.65em auto, 100%;
+    }
+    input[type="number"] {
+        /* Specific style for number input */
     }
 
-    canvas {
-      max-width: 100%;
-      margin-top: 1rem;
+    .dimension-inputs {
+        display: flex;
+        gap: 1rem; /* Space between width, height inputs */
+        align-items: center;
     }
+     .dimension-inputs > div {
+        flex-grow: 1; /* Allow inputs to fill space */
+     }
+
+    .dimension-inputs label {
+        margin-bottom: 0.3rem; /* Less space below label in flex container */
+        font-weight: 500; /* Slightly lighter */
+    }
+
+    .aspect-lock {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: var(--label-color);
+        cursor: pointer;
+    }
+     .aspect-lock input[type="checkbox"] {
+        margin: 0; /* Reset default margin */
+        width: auto; /* Don't make checkbox 100% width */
+        cursor: pointer;
+     }
+
+     /* Quality Slider */
+    .quality-slider-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .quality-slider-container input[type="range"] {
+        flex-grow: 1;
+        margin: 0;
+        padding: 0;
+        height: 8px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: var(--background-color);
+        outline: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+     .quality-slider-container input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: var(--primary-color);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        margin-top: -6px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+     }
+
+     .quality-slider-container input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: var(--primary-color);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+     }
+
+     .quality-slider-container input[type="range"]:hover::-webkit-slider-thumb,
+     .quality-slider-container input[type="range"]:hover::-moz-range-thumb {
+        background: var(--primary-dark);
+     }
+
+
+    .quality-slider-container span {
+        font-weight: 600;
+        color: var(--primary-color);
+        min-width: 30px;
+        text-align: right;
+    }
+
 
     button {
-      background-color: #007bff;
-      color: white;
-      padding: 0.7rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
       width: 100%;
+      padding: 0.9rem 1.5rem;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
       margin-top: 1rem;
     }
 
-    button:hover {
-      background-color: #0056b3;
+    button:hover:not(:disabled) {
+      background-color: var(--primary-dark);
     }
 
-    @media (max-width: 600px) {
-      .container {
-        margin: 1rem;
-        padding: 1rem;
-      }
+    button:disabled {
+        background-color: var(--primary-light);
+        cursor: not-allowed;
+        opacity: 0.9;
     }
+
+    /* --- Preview & Results Area --- */
+    .preview-area {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    .preview-item {
+        width: 100%;
+        text-align: center;
+        background-color: var(--background-color);
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .preview-item h3 {
+        color: var(--primary-dark);
+        margin-bottom: 0.8rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .preview-item img {
+        max-width: 100%;
+        height: auto;
+        max-height: 300px;
+        margin: 0.8rem auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        display: block;
+        object-fit: contain;
+        border: 1px solid var(--border-color); /* Add a border for clarity */
+    }
+
+    .size-info {
+        font-size: 0.9rem;
+        color: var(--label-color);
+        margin-top: 0.5rem;
+    }
+
+    .size-comparison {
+        font-weight: 600;
+        color: var(--secondary-dark); /* Blue for size reduction */
+    }
+     .size-comparison.increase {
+        color: var(--error-color); /* Red if size increases */
+     }
+
+
+    .download-btn {
+      display: inline-block;
+      margin-top: 1.5rem;
+      padding: 0.8rem 1.8rem;
+      background-color: var(--secondary-color);
+      color: white;
+      text-align: center;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background-color 0.2s ease-in-out;
+      box-shadow: 0 4px 8px rgba(59,130,246,0.25); /* Blue shadow for download */
+    }
+
+    .download-btn:hover:not(:disabled) {
+      background-color: var(--secondary-dark);
+    }
+
+    #message {
+        text-align: center;
+        min-height: 1.5em;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .loading #message {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .error #message {
+        color: var(--error-color);
+        font-weight: 500;
+    }
+    .warning #message {
+        color: var(--warning-color);
+        font-weight: 500;
+    }
+
+
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+        .preview-area {
+            flex-direction: row;
+            justify-content: space-between;
+            gap: 1.5rem;
+        }
+        .preview-item {
+             width: 48%;
+             padding: 1.5rem;
+        }
+         .container {
+            padding: 3rem;
+        }
+         .dimension-inputs {
+            /* Adjust gap or layout if needed on larger screens */
+         }
+    }
+
   </style>
+  <!-- Optional: Add a simple icon library link if you want a real upload icon -->
+  <!-- Example using Font Awesome (requires internet connection) -->
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
 </head>
 <body>
   <div class="container">
-    <h1>Image Resizer</h1>
-    <input type="file" id="upload" accept="image/*" />
-    <input type="number" id="width" placeholder="Width (px)" />
-    <input type="number" id="height" placeholder="Height (px)" />
-    <button onclick="resizeImage()">Resize Image</button>
-    <canvas id="canvas"></canvas>
-    <a id="downloadLink" style="display:none;" download="resized-image.png">Download Resized Image</a>
+    <h1>📏 Image Resizer</h1> <!-- Added an emoji -->
+
+    <div class="section">
+      <h2>Upload Image</h2>
+      <!-- Drop Zone -->
+      <div id="dropZone" class="drop-zone">
+        <input type="file" id="imageInput" accept="image/*" />
+        <div class="upload-icon">🖼️</div> <!-- Placeholder or actual icon -->
+        <p class="upload-text">Drag & drop image here, or click to select</p>
+        <p id="selectedFileName" class="file-name"></p>
+      </div>
+       <div id="originalFileInfo" class="file-info" style="display: none;"></div> <!-- Original File Info (Size & Dimensions) -->
+    </div>
+
+    <div class="section" id="optionsSection" style="display: none;">
+      <h2>Resize Options</h2>
+      <div class="dimension-inputs">
+        <div>
+          <label for="width">Width (px):</label>
+          <input type="number" id="width" placeholder="Auto" min="1" />
+        </div>
+         <div>
+          <label for="height">Height (px):</label>
+          <input type="number" id="height" placeholder="Auto" min="1" />
+        </div>
+      </div>
+
+       <label class="aspect-lock">
+           <input type="checkbox" id="aspectLock" checked />
+           Maintain Aspect Ratio
+       </label>
+
+
+       <label for="formatSelect">Output Format:</label>
+      <select id="formatSelect">
+        <option value="png">PNG</option>
+        <option value="jpeg">JPG</option>
+        <option value="webp">WebP</option>
+      </select>
+
+      <label for="quality">Quality (for JPG/WebP):</label>
+      <div class="quality-slider-container">
+          <input type="range" id="quality" value="90" min="1" max="100" step="1" />
+          <span id="qualityValue">90</span>%
+      </div>
+       <p class="file-info" id="qualityNote" style="display: none; color: var(--warning-color);"></p>
+
+
+      <button id="resizeBtn">Resize & Download</button>
+    </div>
+
+    <div class="section preview-section" style="display: none;">
+        <h2>Results</h2>
+        <div id="message"></div> <!-- For messages like errors or loading -->
+        <div class="preview-area">
+            <div id="originalPreview" class="preview-item" style="display: none;">
+                <h3>Original Image</h3>
+                <img id="originalImg" src="#" alt="Original Image Preview"/>
+                 <!-- Dimensions & Size displayed above -->
+            </div>
+            <div id="resizedPreview" class="preview-item" style="display: none;">
+                <h3>Resized Image</h3>
+                <img id="resizedImg" src="#" alt="Resized Image Preview"/>
+                <div id="resizedFileInfo" class="file-info" style="display: none;"></div> <!-- Resized File Info (Size & Dimensions) -->
+                <a id="downloadLink" class="download-btn" href="#" download="resized-image" style="display: none;">Download</a>
+            </div>
+        </div>
+    </div>
+
   </div>
 
   <script>
-    let originalImage = new Image();
+    const imageInput = document.getElementById('imageInput');
+    const dropZone = document.getElementById('dropZone');
+    const selectedFileNameSpan = document.getElementById('selectedFileName');
+    const originalFileInfoDiv = document.getElementById('originalFileInfo');
+    const optionsSection = document.getElementById('optionsSection');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    const aspectLockCheckbox = document.getElementById('aspectLock');
+    const formatSelect = document.getElementById('formatSelect');
+    const qualitySlider = document.getElementById('quality');
+    const qualityValueSpan = document.getElementById('qualityValue');
+    const qualityNoteSpan = document.getElementById('qualityNote');
+    const resizeBtn = document.getElementById('resizeBtn');
+    const messageDiv = document.getElementById('message');
+    const previewSection = document.querySelector('.preview-section');
+    const originalPreviewDiv = document.getElementById('originalPreview');
+    const originalImg = document.getElementById('originalImg');
+    const resizedPreviewDiv = document.getElementById('resizedPreview');
+    const resizedImg = document.getElementById('resizedImg');
+    const resizedFileInfoDiv = document.getElementById('resizedFileInfo');
+    const downloadLink = document.getElementById('downloadLink');
 
-    document.getElementById('upload').addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    let originalFile = null;
+    let originalImageElement = null; // Use an Image object to get dimensions correctly
+    let originalObjectURL = null; // For original preview
+    let resizedObjectURL = null; // For resized preview and download
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        originalImage.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    let originalWidth = 0;
+    let originalHeight = 0;
+    let aspectRatio = 0;
+
+    // --- Helper Functions ---
+
+    // Function to format bytes into a human-readable string (KB, MB)
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+     // Function to clear previous previews, messages, and reset UI state
+    function clearAll() {
+      // Revoke existing URLs to free memory
+      if (originalObjectURL) {
+        URL.revokeObjectURL(originalObjectURL);
+        originalObjectURL = null;
+      }
+      if (resizedObjectURL) {
+        URL.revokeObjectURL(resizedObjectURL);
+        resizedObjectURL = null;
+      }
+
+      // Reset internal state
+      originalFile = null;
+      originalImageElement = null;
+      originalWidth = 0;
+      originalHeight = 0;
+      aspectRatio = 0;
+
+      // Hide and reset UI elements
+      selectedFileNameSpan.textContent = '';
+      originalFileInfoDiv.style.display = 'none';
+      originalFileInfoDiv.textContent = '';
+
+      widthInput.value = '';
+      heightInput.value = '';
+      aspectLockCheckbox.checked = true; // Reset aspect lock
+      qualitySlider.value = 90; // Reset quality slider
+      qualityValueSpan.textContent = 90;
+      qualityNoteSpan.style.display = 'none'; // Hide note
+
+
+      originalPreviewDiv.style.display = 'none';
+      originalImg.src = '#';
+      originalImg.style.display = 'none';
+
+      resizedPreviewDiv.style.display = 'none';
+      resizedImg.src = '#';
+      resizedImg.style.display = 'none';
+      resizedFileInfoDiv.style.display = 'none';
+      resizedFileInfoDiv.textContent = '';
+      downloadLink.href = '#';
+      downloadLink.style.display = 'none';
+
+      messageDiv.textContent = '';
+      previewSection.style.display = 'none';
+      previewSection.classList.remove('loading', 'error', 'warning');
+
+      optionsSection.style.display = 'none'; // Hide options section
+
+      // Reset file input and drop zone UI
+      imageInput.value = '';
+      dropZone.classList.remove('has-file', 'dragover');
+
+      // Ensure resize button is disabled until a file is ready
+      resizeBtn.disabled = true;
+    }
+
+    // Function to handle a selected/dropped file
+    function handleFile(file) {
+        clearAll(); // Clear previous state
+
+        if (!file) {
+            messageDiv.textContent = "No file selected.";
+            previewSection.style.display = 'block';
+            previewSection.classList.add('error');
+            return;
+        }
+
+        // Basic validation for image type
+        if (!file.type.startsWith('image/')) {
+            messageDiv.textContent = "Please select an image file (JPG, PNG, GIF, etc.).";
+            previewSection.style.display = 'block';
+            previewSection.classList.add('error');
+            clearAll(); // Ensure full reset if wrong file type
+            return;
+        }
+
+        originalFile = file;
+        selectedFileNameSpan.textContent = `Selected: ${file.name}`;
+        dropZone.classList.add('has-file'); // Indicate a file is loaded
+
+
+        // Read file to get Data URL for preview and dimension reading
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            originalObjectURL = event.target.result;
+
+            // Use a temporary Image object to get dimensions reliably
+            originalImageElement = new Image();
+            originalImageElement.onload = () => {
+                originalWidth = originalImageElement.width;
+                originalHeight = originalImageElement.height;
+                aspectRatio = originalWidth / originalHeight;
+
+                // Display original dimensions and size
+                originalFileInfoDiv.textContent = `Original: ${originalWidth}x${originalHeight}, ${formatBytes(originalFile.size)}`;
+                originalFileInfoDiv.style.display = 'block';
+
+                 // Set initial values in inputs
+                widthInput.value = originalWidth;
+                heightInput.value = originalHeight;
+
+
+                // Display original preview
+                originalImg.src = originalObjectURL; // Use Data URL for preview
+                originalImg.style.display = 'block';
+                originalPreviewDiv.style.display = 'block';
+                previewSection.style.display = 'block'; // Show the results section (to show preview)
+
+                messageDiv.textContent = 'Image loaded. Set dimensions and options.';
+                previewSection.classList.remove('error', 'warning');
+
+                // Show options section and enable resize button
+                optionsSection.style.display = 'flex';
+                resizeBtn.disabled = false;
+
+            };
+             originalImageElement.onerror = function() {
+                messageDiv.textContent = "Error loading image dimensions.";
+                previewSection.style.display = 'block';
+                previewSection.classList.add('error');
+                clearAll(); // Full reset on image load error
+            };
+            originalImageElement.src = originalObjectURL; // Load the image data
+
+
+        };
+        reader.onerror = function() {
+             messageDiv.textContent = "Error reading image file.";
+             previewSection.style.display = 'block';
+             previewSection.classList.add('error');
+             clearAll();
+        }
+        reader.readAsDataURL(originalFile);
+
+
+    }
+
+    // --- Event Listeners ---
+
+    // Handle file selection via click
+    imageInput.addEventListener('change', function(e) {
+      handleFile(e.target.files[0]);
     });
 
-    function resizeImage() {
-      const width = parseInt(document.getElementById('width').value);
-      const height = parseInt(document.getElementById('height').value);
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
+    // Handle drag and drop events on the drop zone
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+        messageDiv.textContent = 'Drop your image here...';
+        previewSection.style.display = 'block';
+        previewSection.classList.remove('error', 'warning');
+    });
 
-      if (!width || !height || isNaN(width) || isNaN(height)) {
-        alert("Please enter valid width and height.");
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+        // Restore message if a file was already selected
+        if (originalFile) {
+             messageDiv.textContent = 'Image loaded. Set dimensions and options.';
+        } else {
+            messageDiv.textContent = ''; // Clear message if no file
+             previewSection.style.display = 'none'; // Hide section if no file
+        }
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        handleFile(file);
+    });
+
+    // Aspect Ratio Lock Logic
+    widthInput.addEventListener('input', function() {
+        if (aspectLockCheckbox.checked && originalWidth > 0) {
+            const newWidth = parseInt(this.value);
+            if (!isNaN(newWidth) && newWidth > 0) {
+                heightInput.value = Math.round(newWidth / aspectRatio);
+            } else if (this.value === '') {
+                 heightInput.value = ''; // Clear height if width is cleared
+            }
+        }
+         // Clear results if inputs change after resizing
+         if (resizedObjectURL) {
+             clearResizedResults();
+             messageDiv.textContent = 'Options changed. Resize again.';
+         }
+    });
+
+    heightInput.addEventListener('input', function() {
+        if (aspectLockCheckbox.checked && originalHeight > 0) {
+            const newHeight = parseInt(this.value);
+             if (!isNaN(newHeight) && newHeight > 0) {
+                widthInput.value = Math.round(newHeight * aspectRatio);
+            } else if (this.value === '') {
+                 widthInput.value = ''; // Clear width if height is cleared
+            }
+        }
+         // Clear results if inputs change after resizing
+         if (resizedObjectURL) {
+             clearResizedResults();
+              messageDiv.textContent = 'Options changed. Resize again.';
+         }
+    });
+
+    // Clear results if aspect lock is toggled after resizing
+    aspectLockCheckbox.addEventListener('change', function() {
+        if (resizedObjectURL) {
+             clearResizedResults();
+             messageDiv.textContent = 'Options changed. Resize again.';
+        }
+         // Optional: Adjust height/width based on current value if lock is turned ON
+         if (this.checked && widthInput.value && !heightInput.value && originalWidth > 0) {
+            heightInput.value = Math.round(parseInt(widthInput.value) / aspectRatio);
+         } else if (this.checked && heightInput.value && !widthInput.value && originalHeight > 0) {
+            widthInput.value = Math.round(parseInt(heightInput.value) * aspectRatio);
+         }
+    });
+
+
+    // Update quality value display when slider moves
+    qualitySlider.addEventListener('input', function() {
+        qualityValueSpan.textContent = this.value;
+    });
+
+    // Update quality note based on selected format
+    formatSelect.addEventListener('change', function() {
+        const format = this.value;
+        if (format === 'png') {
+            qualityNoteSpan.textContent = 'Note: Quality setting is ignored for PNG format as it is lossless.';
+            qualityNoteSpan.style.display = 'block';
+            previewSection.classList.add('warning');
+        } else {
+            qualityNoteSpan.textContent = '';
+            qualityNoteSpan.style.display = 'none';
+            previewSection.classList.remove('warning');
+        }
+         // Clear results if format changes after resizing
+         if (resizedObjectURL) {
+             clearResizedResults();
+             messageDiv.textContent = 'Options changed. Resize again.';
+         }
+    });
+
+    // Helper to clear only the resized results section
+    function clearResizedResults() {
+         if (resizedObjectURL) {
+            URL.revokeObjectURL(resizedObjectURL);
+            resizedObjectURL = null;
+         }
+         resizedImg.src = '#';
+         resizedImg.style.display = 'none';
+         resizedFileInfoDiv.style.display = 'none';
+         resizedFileInfoDiv.textContent = '';
+         downloadLink.href = '#';
+         downloadLink.style.display = 'none';
+         compressedPreviewDiv.style.display = 'none';
+         // Keep message and loading state handlers outside this function
+         messageDiv.textContent = ''; // Clear success/error message related to previous resize
+         previewSection.classList.remove('loading', 'error', 'warning');
+    }
+
+
+    // Handle resize button click
+    resizeBtn.addEventListener('click', function() {
+      if (!originalFile || !originalImageElement) {
+        messageDiv.textContent = "Please upload an image first.";
+        previewSection.style.display = 'block';
+        previewSection.classList.add('error');
         return;
       }
 
-      canvas.width = width;
-      canvas.height = height;
+      let targetWidth = parseInt(widthInput.value);
+      let targetHeight = parseInt(heightInput.value);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(originalImage, 0, 0, width, height);
+      // Validate inputs
+      if ((isNaN(targetWidth) || targetWidth <= 0) && (isNaN(targetHeight) || targetHeight <= 0)) {
+         messageDiv.textContent = "Please enter a valid width or height.";
+         previewSection.style.display = 'block';
+         previewSection.classList.add('error');
+         return;
+      }
 
-      const downloadLink = document.getElementById('downloadLink');
-      downloadLink.href = canvas.toDataURL();
-      downloadLink.style.display = 'block';
-      downloadLink.textContent = 'Download Resized Image';
+      // Auto-calculate missing dimension if aspect ratio is locked
+      if (aspectLockCheckbox.checked) {
+          if (isNaN(targetWidth) || targetWidth <= 0) {
+             targetWidth = Math.round(targetHeight * aspectRatio);
+             widthInput.value = targetWidth; // Update input
+          } else if (isNaN(targetHeight) || targetHeight <= 0) {
+             targetHeight = Math.round(targetWidth / aspectRatio);
+             heightInput.value = targetHeight; // Update input
+          }
+      } else {
+         // If aspect ratio is NOT locked, allow one dimension to be auto-calculated
+         if (isNaN(targetWidth) || targetWidth <= 0) {
+            targetWidth = originalWidth; // Use original width if not provided and not locked
+            widthInput.value = targetWidth;
+         }
+         if (isNaN(targetHeight) || targetHeight <= 0) {
+            targetHeight = originalHeight; // Use original height if not provided and not locked
+            heightInput.value = targetHeight;
+         }
+      }
+
+       // Final validation after potential auto-calculation
+       if (isNaN(targetWidth) || targetWidth <= 0 || isNaN(targetHeight) || targetHeight <= 0) {
+           messageDiv.textContent = "Could not determine valid dimensions. Please enter both or use the aspect lock.";
+            previewSection.style.display = 'block';
+            previewSection.classList.add('error');
+            return;
+       }
+
+
+      // Clear previous resized results
+      clearResizedResults();
+
+
+      const format = formatSelect.value;
+      const quality = parseInt(qualitySlider.value) / 100; // Get quality as 0-1
+
+      // Create an offscreen canvas for drawing
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Set canvas dimensions to target dimensions
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      // Show loading state
+      messageDiv.textContent = `Resizing to ${targetWidth}x${targetHeight} and saving as ${format.toUpperCase()}...`;
+      resizeBtn.disabled = true;
+      optionsSection.classList.add('disabled'); // Disable options section
+      previewSection.classList.add('loading');
+      previewSection.classList.remove('error', 'warning');
+
+      try {
+          // Draw the original image onto the canvas at the target dimensions
+          // originalImageElement should already be loaded from handleFile
+          ctx.drawImage(originalImageElement, 0, 0, targetWidth, targetHeight);
+
+          const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/' + format;
+
+          // Use 'image/jpeg' mime type for toBlob if format is jpg
+          const blobMimeType = format === 'jpg' ? 'image/jpeg' : 'image/' + format;
+
+
+          canvas.toBlob(function(blob) {
+            // Remove loading state
+            messageDiv.textContent = '';
+            resizeBtn.disabled = false;
+            optionsSection.classList.remove('disabled');
+            previewSection.classList.remove('loading');
+
+
+            if (blob) {
+              resizedObjectURL = URL.createObjectURL(blob);
+
+              // Display resized preview
+              resizedImg.onload = () => {
+                 // URL.revokeObjectURL can be called here if you want to release memory immediately
+              };
+              resizedImg.src = resizedObjectURL;
+              resizedImg.style.display = 'block';
+              resizedPreviewDiv.style.display = 'block'; // Show the resized preview div
+
+              // Display resized size and dimensions
+              resizedFileInfoDiv.innerHTML = `Resized: ${targetWidth}x${targetHeight}, ${formatBytes(blob.size)}`; // Use innerHTML for dimension text + size
+              resizedFileInfoDiv.style.display = 'block';
+
+              // Calculate and display size comparison
+              const originalSizeBytes = originalFile.size;
+              const resizedSizeBytes = blob.size;
+              const sizeDiff = originalSizeBytes - resizedSizeBytes;
+              const percentageDiff = originalSizeBytes > 0 ? (sizeDiff / originalSizeBytes) * 100 : 0;
+
+              const comparisonText = originalSizeBytes > 0
+                ? `${sizeDiff > 0 ? 'Reduced by' : (sizeDiff < 0 ? 'Increased by' : 'No change')}: ${formatBytes(Math.abs(sizeDiff))} (${percentageDiff.toFixed(2)}%)`
+                : '';
+
+              const comparisonSpan = document.createElement('span');
+              comparisonSpan.className = 'size-comparison';
+              if (sizeDiff < 0) comparisonSpan.classList.add('increase'); // Red if size increased
+              comparisonSpan.textContent = comparisonText;
+               resizedFileInfoDiv.appendChild(document.createElement('br')); // Add break
+              resizedFileInfoDiv.appendChild(comparisonSpan);
+
+
+              // Set up download link
+              const originalFileName = originalFile.name.split('.').slice(0, -1).join('.') || 'image';
+              downloadLink.href = resizedObjectURL;
+              downloadLink.download = `${originalFileName}-resized-${targetWidth}x${targetHeight}.${format}`; // More descriptive filename
+              downloadLink.textContent = `Download ${format.toUpperCase()} (${formatBytes(blob.size)})`; // Dynamic button text with size
+              downloadLink.style.display = 'inline-block';
+
+              messageDiv.textContent = 'Resizing successful!';
+              previewSection.classList.remove('error', 'warning');
+
+
+            } else {
+              messageDiv.textContent = "Error resizing image. Could not create blob.";
+              previewSection.classList.add('error');
+              console.error("Canvas toBlob failed.");
+            }
+          }, blobMimeType, quality);
+
+      } catch (e) {
+           messageDiv.textContent = `An error occurred during resizing: ${e.message}`;
+           previewSection.classList.add('error');
+           resizeBtn.disabled = false;
+           optionsSection.classList.remove('disabled');
+           previewSection.classList.remove('loading');
+           console.error("Error during canvas operations:", e);
+      }
+
+
+    });
+
+    // Initial state: Hide options and preview section, disable button
+    optionsSection.style.display = 'none';
+    previewSection.style.display = 'none';
+    resizeBtn.disabled = true;
+
+    // Initial state for quality note based on default format (PNG)
+    if(formatSelect.value === 'png') {
+         qualityNoteSpan.textContent = 'Note: Quality setting is ignored for PNG format as it is lossless.';
+         qualityNoteSpan.style.display = 'block';
+         previewSection.classList.add('warning'); // Add warning class initially if needed
     }
+
+
   </script>
 </body>
 </html>
-
-  
-  
